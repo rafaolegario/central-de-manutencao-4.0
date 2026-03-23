@@ -1,0 +1,6 @@
+@central_de_manutencao.Api_HostAddress = http://localhost:5155
+
+GET {{central_de_manutencao_4._0.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

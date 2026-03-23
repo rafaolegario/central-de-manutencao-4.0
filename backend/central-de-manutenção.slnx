@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/central-de-manutencao-4.0.Api/central-de-manutencao.Api.csproj" Id="5429cedd-9e7a-4735-bc23-9ea860efabe2" />
+  </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>
