@@ -1,0 +1,8 @@
+namespace central_de_manutencao.Api.Enums
+{
+    public enum Roles
+    {
+        Admin,
+        Technician,
+    }
+}
