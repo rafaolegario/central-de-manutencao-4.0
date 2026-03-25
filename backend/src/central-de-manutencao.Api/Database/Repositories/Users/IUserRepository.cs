@@ -5,10 +5,11 @@ namespace central_de_manutencao.Api.Database.Repositories.Users
 {
     public interface IUserRepository
     {
-        void Create(User user);
-        void Delete(User user);
-        void Update(User user);
-        User? GetById(Guid id);
-        List<User> List(Specialties? specialty);
+        Task Create(User user);
+        Task Delete(User user);
+        Task Update(User user);
+        Task<User?> GetById(Guid id);
+        Task<User?> GetByEmail(string email);
+        Task<List<User>> List(Specialties? specialty);
     }
 }

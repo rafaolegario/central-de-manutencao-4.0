@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using central_de_manutencao.Api.Enums;
 using central_de_manutencao.Api.Models.Users;
 
@@ -12,35 +13,40 @@ namespace central_de_manutencao.Api.Database.Repositories.Users
             _context = context;
         }
 
-        public void Create(User user)
+        public async Task Create(User user)
         {
             _context.Users.Add(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public void Delete(User user)
+        public async Task Delete(User user)
         {
             _context.Users.Remove(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public void Update(User user)
+        public async Task Update(User user)
         {
             _context.Users.Update(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public User? GetById(Guid id)
+        public async Task<User?> GetById(Guid id)
         {
-            return _context.Users.FirstOrDefault(u => u.Id == id);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
         }
 
-        public List<User> List(Specialties? specialty)
+        public async Task<User?> GetByEmail(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<List<User>> List(Specialties? specialty)
         {
             if (specialty.HasValue)
-                return _context.Users.Where(u => u.Specialty == specialty.Value).ToList();
+                return await _context.Users.Where(u => u.Specialty == specialty.Value).ToListAsync();
 
-            return _context.Users.ToList();
+            return await _context.Users.ToListAsync();
         }
     }
 }
