@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using central_de_manutencao.Api.Database;
 using central_de_manutencao.Api.Database.Repositories.Users;
+using central_de_manutencao.Api.Services.Auth;
+using central_de_manutencao.Api.Token;
 
 namespace central_de_manutencao.Api
 {
@@ -13,7 +15,14 @@ namespace central_de_manutencao.Api
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(connectionString));
 
+            var expirationTimeMinutes = configuration.GetValue<uint>("Settings:Jwt:ExpiresMinutes");
+            var signingKey = configuration.GetValue<string>("Settings:Jwt:SigningKey");
+
+            services.AddScoped<IAccessTokenGenerator>(config => new JwtTokenGenerator(expirationTimeMinutes, signingKey!));
+
             services.AddScoped<IUserRepository, UserRepository>();
+
+            services.AddScoped<AuthenticateService>();
 
             return services;
         }

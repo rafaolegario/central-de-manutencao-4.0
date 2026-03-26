@@ -9,6 +9,11 @@ public static class DbInitializer
         var email = config["AdminUser:Email"];
         var password = config["AdminUser:Password"];
 
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentNullException(nameof(email), "Admin email configuration is missing.");
+        }
+
         if (!context.Users.Any(u => u.Email == email))
         {
             var admin = new User
