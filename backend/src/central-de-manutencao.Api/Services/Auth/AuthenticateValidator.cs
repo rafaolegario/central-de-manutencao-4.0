@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace central_de_manutencao.Api.Services.Auth
 {
-    public class AuthenticateUserValidator : AbstractValidator<AuthenticateRequestJson>
+    public class AuthenticateValidator : AbstractValidator<AuthenticateRequestJson>
     {
-        public AuthenticateUserValidator()
+        public AuthenticateValidator()
         {
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email is required.")
