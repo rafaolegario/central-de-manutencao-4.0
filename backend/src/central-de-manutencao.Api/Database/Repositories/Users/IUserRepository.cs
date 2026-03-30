@@ -10,6 +10,6 @@ namespace central_de_manutencao.Api.Database.Repositories.Users
         Task Update(User user);
         Task<User?> GetById(Guid id);
         Task<User?> GetByEmail(string email);
-        Task<List<User>> List(Specialties? specialty);
+        Task<List<User>> List(Specialties? specialty, bool? active);
     }
 }
