@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using central_de_manutencao.Api.Database;
 using central_de_manutencao.Api.Database.Repositories.Users;
 using central_de_manutencao.Api.Services.Auth;
+using central_de_manutencao.Api.Services.User;
 using central_de_manutencao.Api.Token;
 
 namespace central_de_manutencao.Api
@@ -23,6 +24,11 @@ namespace central_de_manutencao.Api
             services.AddScoped<IUserRepository, UserRepository>();
 
             services.AddScoped<AuthenticateService>();
+            services.AddScoped<CreateUserService>();
+            services.AddScoped<EditUserService>();
+            services.AddScoped<DeleteUserService>();
+            services.AddScoped<ListUsersService>();
+            services.AddScoped<GetUserService>();
 
             return services;
         }
