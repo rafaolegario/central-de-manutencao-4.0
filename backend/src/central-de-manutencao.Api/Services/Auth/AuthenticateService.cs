@@ -31,7 +31,11 @@ namespace central_de_manutencao.Api.Services.Auth
             {
                 throw new NotFoundException("Usuário ou senha incorretos.");
             }
-            
+
+            if (user.Active == false)
+            {
+                throw new Exception("Usuário inativo. Contate o administrador.");
+            }
 
             var token = _tokenGenerator.Generate(user);
 
