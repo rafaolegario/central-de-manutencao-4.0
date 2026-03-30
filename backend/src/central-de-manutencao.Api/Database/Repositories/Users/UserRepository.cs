@@ -41,12 +41,17 @@ namespace central_de_manutencao.Api.Database.Repositories.Users
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<List<User>> List(Specialties? specialty)
+        public async Task<List<User>> List(Specialties? specialty, bool? active)
         {
-            if (specialty.HasValue)
-                return await _context.Users.Where(u => u.Specialty == specialty.Value).ToListAsync();
+            var query = _context.Users.AsQueryable();
 
-            return await _context.Users.ToListAsync();
+            if (specialty.HasValue)
+                query = query.Where(u => u.Specialty == specialty.Value);
+
+            if (active.HasValue)
+                query = query.Where(u => u.Active == active.Value);
+
+            return await query.ToListAsync();
         }
     }
 }
