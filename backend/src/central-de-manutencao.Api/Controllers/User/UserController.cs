@@ -13,7 +13,7 @@ namespace central_de_manutencao.Api.Controllers.User;
 public class UserController : ControllerBase
 {
   [Authorize(Roles = "Admin")]
-  [HttpPost("create")]
+  [HttpPost()]
   [ProducesResponseType(typeof(CreateUserResponseJson), StatusCodes.Status200OK)]
   [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
   public async Task<IActionResult> Create(

@@ -25,21 +25,14 @@ builder.Services.AddSwaggerGen(config =>
     config.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Description = @"JWT Authorization header using the Bearer scheme.
-                      Enter 'Bearer' [space] and then your token in the text input below.
-                      Example: 'Bearer 12345abcdef'",
+        Description = "Insira o token JWT. Exemplo: Bearer {token}",
         In = ParameterLocation.Header,
-        Scheme = "Bearer",
-        Type = SecuritySchemeType.ApiKey
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
     });
 
-    config.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecuritySchemeReference("Bearer"),
-            new List<string>()
-        }
-    });
+    config.OperationFilter<central_de_manutencao.Api.Filters.AuthorizeCheckOperationFilter>();
+    config.DocumentFilter<central_de_manutencao.Api.Filters.SecurityDocumentFilter>();
 });
 
 builder.Services.AddMvc(options => options.Filters.Add(typeof(ExceptionFilter)));
@@ -82,8 +75,12 @@ using (var scope = app.Services.CreateScope())
     DbInitializer.Seed(context, config);
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
