@@ -22,15 +22,19 @@ namespace central_de_manutencao.Api
             var signingKey = configuration.GetValue<string>("Settings:Jwt:SigningKey");
 
             services.AddScoped<IAccessTokenGenerator>(config => new JwtTokenGenerator(expirationTimeMinutes, signingKey!));
+            services.AddSingleton<ITokenBlacklist, InMemoryTokenBlacklist>();
 
             services.AddScoped<IUserRepository, UserRepository>();
 
             services.AddScoped<AuthenticateService>();
+            services.AddScoped<RefreshTokenService>();
+            services.AddScoped<LogoutService>();
             services.AddScoped<CreateUserService>();
             services.AddScoped<EditUserService>();
             services.AddScoped<DeleteUserService>();
             services.AddScoped<ListUsersService>();
             services.AddScoped<GetUserService>();
+            services.AddScoped<ToggleUserActiveService>();
 
             services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
             services.AddScoped<IServiceOrderLogRepository, ServiceOrderLogRepository>();
