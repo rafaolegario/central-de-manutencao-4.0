@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using central_de_manutencao.Api.Token;
+using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +54,23 @@ builder.Services.AddAuthentication(config =>
         ValidateAudience = false,
         ClockSkew = new TimeSpan(0),
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey!))
+    };
+
+    config.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = context =>
+        {
+            var blacklist = context.HttpContext.RequestServices.GetRequiredService<ITokenBlacklist>();
+            var token = context.HttpContext.Request.Headers["Authorization"]
+                .FirstOrDefault()?.Replace("Bearer ", "");
+
+            if (!string.IsNullOrEmpty(token) && blacklist.IsBlacklisted(token))
+            {
+                context.Fail("Token foi invalidado.");
+            }
+
+            return Task.CompletedTask;
+        }
     };
 });
 
