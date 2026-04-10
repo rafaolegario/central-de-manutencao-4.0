@@ -19,6 +19,8 @@ public class DeleteUserService
         if (user is null)
             throw new NotFoundException("Usuário não encontrado.");
 
-        await _userRepository.Delete(user);
+        user.Active = false;
+
+        await _userRepository.Update(user);
     }
 }
