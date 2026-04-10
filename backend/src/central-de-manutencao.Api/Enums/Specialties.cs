@@ -4,6 +4,7 @@ namespace central_de_manutencao.Api.Enums
     {
         Eletrician,
         Mechanic,
+        Electromechanic,
         General,
     }
 }
