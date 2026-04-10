@@ -41,9 +41,12 @@ namespace central_de_manutencao.Api.Database.Repositories.Users
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<List<User>> List(Specialties? specialty, bool? active)
+        public async Task<List<User>> List(Roles? role, Specialties? specialty, bool? active)
         {
             var query = _context.Users.AsQueryable();
+
+            if (role.HasValue)
+                query = query.Where(u => u.Role == role.Value);
 
             if (specialty.HasValue)
                 query = query.Where(u => u.Specialty == specialty.Value);

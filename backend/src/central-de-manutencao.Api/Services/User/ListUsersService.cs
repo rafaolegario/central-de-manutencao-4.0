@@ -13,13 +13,17 @@ public class ListUsersService
         _userRepository = userRepository;
     }
 
-    public async Task<List<UserResponseJson>> Execute(string? specialty, bool? active)
+    public async Task<List<UserResponseJson>> Execute(string? role, string? specialty, bool? active)
     {
+        Roles? roleEnum = null;
+        if (!string.IsNullOrEmpty(role) && Enum.TryParse<Roles>(role, true, out var parsedRole))
+            roleEnum = parsedRole;
+
         Specialties? specialtyEnum = null;
-        if (!string.IsNullOrEmpty(specialty) && Enum.TryParse<Specialties>(specialty, out var parsed))
+        if (!string.IsNullOrEmpty(specialty) && Enum.TryParse<Specialties>(specialty, true, out var parsed))
             specialtyEnum = parsed;
 
-        var users = await _userRepository.List(specialtyEnum, active);
+        var users = await _userRepository.List(roleEnum, specialtyEnum, active);
 
         return users.Select(u => new UserResponseJson
         {
