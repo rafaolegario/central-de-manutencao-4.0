@@ -54,10 +54,11 @@ public class UserController : ControllerBase
   [ProducesResponseType(typeof(List<UserResponseJson>), StatusCodes.Status200OK)]
   public async Task<IActionResult> List(
       [FromServices] ListUsersService useCase,
+      [FromQuery] string? role,
       [FromQuery] string? specialty,
       [FromQuery] bool? active)
   {
-    var response = await useCase.Execute(specialty, active);
+    var response = await useCase.Execute(role, specialty, active);
     return Ok(response);
   }
 
@@ -71,5 +72,18 @@ public class UserController : ControllerBase
   {
     var response = await useCase.Execute(id, User);
     return Ok(response);
+  }
+
+  [Authorize(Roles = "Admin")]
+  [HttpPatch("{id:guid}/active")]
+  [ProducesResponseType(StatusCodes.Status204NoContent)]
+  [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
+  public async Task<IActionResult> ToggleActive(
+      [FromServices] ToggleUserActiveService useCase,
+      [FromRoute] Guid id,
+      [FromBody] ToggleUserActiveRequestJson request)
+  {
+    await useCase.Execute(id, request);
+    return NoContent();
   }
 }
