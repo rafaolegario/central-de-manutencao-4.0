@@ -41,10 +41,15 @@ namespace central_de_manutencao.Api.Services.Auth
 
             return new AuthenticateResponseJson
             {
-                UserId = user.Id.ToString(),
-                Name = user.Name,
-                Token = token
-
+                Token = token,
+                ExpiresIn = _tokenGenerator.ExpiresInSeconds,
+                User = new AuthenticateUserJson
+                {
+                    Id = user.Id.ToString(),
+                    Name = user.Name,
+                    Role = user.Role.ToString().ToLower(),
+                    Specialty = user.Specialty?.ToString().ToLower()
+                }
             };
 
         }

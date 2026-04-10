@@ -5,5 +5,6 @@ namespace central_de_manutencao.Api.Token
   public interface IAccessTokenGenerator
   {
     string Generate(User user);
+    int ExpiresInSeconds { get; }
   }
 }
