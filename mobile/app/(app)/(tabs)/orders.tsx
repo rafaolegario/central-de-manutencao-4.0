@@ -67,33 +67,35 @@ export default function OrdersScreen() {
       </View>
 
       {/* Filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chips}
-        style={styles.chipsScroll}
-      >
-        {FILTERS.map((f) => (
-          <TouchableOpacity
-            key={f.key}
-            style={[styles.chip, selected === f.key && styles.chipActive]}
-            onPress={() => setSelected(f.key)}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[styles.chipText, selected === f.key && styles.chipTextActive]}
+      <View style={styles.chipsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}
+        >
+          {FILTERS.map((f) => (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.chip, selected === f.key && styles.chipActive]}
+              onPress={() => setSelected(f.key)}
+              activeOpacity={0.8}
             >
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text
+                style={[styles.chipText, selected === f.key && styles.chipTextActive]}
+              >
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* List */}
       <FlatList
+        style={styles.list}
         data={filtered}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <ServiceOrderCard
             order={item}
@@ -156,8 +158,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipsScroll: {
-    flexGrow: 0,
+  chipsWrapper: {
+    overflow: 'hidden',
   },
   chips: {
     paddingHorizontal: 16,
@@ -186,6 +188,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   list: {
+    flex: 1,
+  },
+  listContent: {
     paddingHorizontal: 16,
     paddingBottom: 20,
   },
