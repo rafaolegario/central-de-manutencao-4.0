@@ -1,7 +1,12 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { Colors } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AppLayout() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
+
   return (
     <Stack
       screenOptions={{
@@ -9,7 +14,8 @@ export default function AppLayout() {
         headerTintColor: Colors.primary,
         headerTitleStyle: { fontWeight: '700', color: Colors.textPrimary },
         headerShadowVisible: false,
-        headerBackTitle: 'Voltar',
+        headerBackVisible: true,
+        headerBackTitle: '',
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
