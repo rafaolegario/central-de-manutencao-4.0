@@ -1,10 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Colors } from '@/constants/theme';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
 
 interface StatsCardProps {
   title: string;
@@ -13,6 +10,7 @@ interface StatsCardProps {
   iconBgColor: string;
   iconColor: string;
   onPress?: () => void;
+  style?: ViewStyle;
 }
 
 export default function StatsCard({
@@ -22,10 +20,11 @@ export default function StatsCard({
   iconBgColor,
   iconColor,
   onPress,
+  style,
 }: StatsCardProps) {
   return (
     <TouchableOpacity
-      style={[styles.card, { width: CARD_WIDTH }]}
+      style={[styles.card, style]}
       onPress={onPress}
       activeOpacity={onPress ? 0.85 : 1}
       disabled={!onPress}

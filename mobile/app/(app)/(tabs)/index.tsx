@@ -57,37 +57,45 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Stats grid */}
+        {/* Stats grid — 2×2 */}
         <Text style={styles.sectionTitle}>Resumo</Text>
         <View style={styles.statsGrid}>
-          <StatsCard
-            title="Críticas"
-            value={criticalCount}
-            icon="assignment-late"
-            iconBgColor="#FEE2E2"
-            iconColor="#DC2626"
-          />
-          <StatsCard
-            title="Abertas"
-            value={openCount}
-            icon="pending-actions"
-            iconBgColor="#DBEAFE"
-            iconColor="#1D4ED8"
-          />
-          <StatsCard
-            title="Andamento"
-            value={inProgressCount}
-            icon="engineering"
-            iconBgColor="#FEF3C7"
-            iconColor="#92400E"
-          />
-          <StatsCard
-            title="Concluídas"
-            value={doneCount}
-            icon="check-circle"
-            iconBgColor="#DCFCE7"
-            iconColor="#15803D"
-          />
+          <View style={styles.statsRow}>
+            <StatsCard
+              title="Críticas"
+              value={criticalCount}
+              icon="assignment-late"
+              iconBgColor="#FEE2E2"
+              iconColor="#DC2626"
+              style={styles.statsCardFlex}
+            />
+            <StatsCard
+              title="Abertas"
+              value={openCount}
+              icon="pending-actions"
+              iconBgColor="#DBEAFE"
+              iconColor="#1D4ED8"
+              style={styles.statsCardFlex}
+            />
+          </View>
+          <View style={styles.statsRow}>
+            <StatsCard
+              title="Andamento"
+              value={inProgressCount}
+              icon="engineering"
+              iconBgColor="#FEF3C7"
+              iconColor="#92400E"
+              style={styles.statsCardFlex}
+            />
+            <StatsCard
+              title="Concluídas"
+              value={doneCount}
+              icon="check-circle"
+              iconBgColor="#DCFCE7"
+              iconColor="#15803D"
+              style={styles.statsCardFlex}
+            />
+          </View>
         </View>
 
         {/* Recent orders */}
@@ -176,10 +184,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
     marginBottom: 28,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statsCardFlex: {
+    flex: 1,
   },
   sectionTitle: {
     fontSize: 16,
