@@ -1,41 +1,84 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
+  // Brand
+  primary: '#F97316',
+  primaryLight: '#FFEDD5',
+  primaryDark: '#EA6C00',
+
+  // Backgrounds
+  white: '#FFFFFF',
+  surface: '#FAFAFA',
+
+  // Borders
+  border: '#E5E7EB',
+
+  // Text
+  textPrimary: '#292524',
+  textSecondary: '#78716C',
+  textMuted: '#A8A29E',
+
+  // Semantic
+  error: '#EF4444',
+  errorLight: '#FEE2E2',
+  success: '#22C55E',
+  successLight: '#DCFCE7',
+  warning: '#F59E0B',
+  warningLight: '#FEF3C7',
+  info: '#3B82F6',
+  infoLight: '#DBEAFE',
+
+  // Border radius constants
+  radiusSm: 8,
+  radiusMd: 12,
+  radiusLg: 16,
+  radiusXl: 20,
+
+  // Status color map
+  status: {
+    Open:       { bg: '#DBEAFE', text: '#1D4ED8' },
+    Assigned:   { bg: '#EDE9FE', text: '#6D28D9' },
+    InProgress: { bg: '#FEF3C7', text: '#92400E' },
+    Paused:     { bg: '#FEE2E2', text: '#991B1B' },
+    Completed:  { bg: '#DCFCE7', text: '#15803D' },
+    Approved:   { bg: '#DCFCE7', text: '#166534' },
+    Rejected:   { bg: '#FEE2E2', text: '#DC2626' },
+    Reopened:   { bg: '#EDE9FE', text: '#7C3AED' },
+    Canceled:   { bg: '#F3F4F6', text: '#4B5563' },
+  } as Record<string, { bg: string; text: string }>,
+
+  // Priority color map
+  priority: {
+    Low:      { bg: '#F3F4F6', text: '#4B5563' },
+    Medium:   { bg: '#FEF3C7', text: '#92400E' },
+    High:     { bg: '#FFEDD5', text: '#C2410C' },
+    Critical: { bg: '#FEE2E2', text: '#DC2626' },
+  } as Record<string, { bg: string; text: string }>,
+
+  // Backward-compatibility shim for existing components
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#292524',
+    background: '#FFFFFF',
+    tint: '#F97316',
+    icon: '#78716C',
+    tabIconDefault: '#A8A29E',
+    tabIconSelected: '#F97316',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#292524',
+    background: '#FFFFFF',
+    tint: '#F97316',
+    icon: '#78716C',
+    tabIconDefault: '#A8A29E',
+    tabIconSelected: '#F97316',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
