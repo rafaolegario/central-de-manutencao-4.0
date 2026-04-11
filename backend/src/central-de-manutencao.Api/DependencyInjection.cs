@@ -5,6 +5,10 @@ using central_de_manutencao.Api.Database.Repositories.ServiceOrders;
 using central_de_manutencao.Api.Services.Auth;
 using central_de_manutencao.Api.Services.User;
 using central_de_manutencao.Api.Services.ServiceOrder;
+using central_de_manutencao.Api.Database.Repositories.Stock;
+using central_de_manutencao.Api.Services.Stock;
+using central_de_manutencao.Api.Database.Repositories.Tools;
+using central_de_manutencao.Api.Services.Tool;
 using central_de_manutencao.Api.Token;
 
 namespace central_de_manutencao.Api
@@ -45,6 +49,23 @@ namespace central_de_manutencao.Api
             services.AddScoped<GetServiceOrderService>();
             services.AddScoped<ListServiceOrdersService>();
             services.AddScoped<UpdateServiceOrderStatusService>();
+
+            services.AddScoped<IStockItemRepository, StockItemRepository>();
+            services.AddScoped<CreateStockItemService>();
+            services.AddScoped<EditStockItemService>();
+            services.AddScoped<GetStockItemService>();
+            services.AddScoped<ListStockItemsService>();
+            services.AddScoped<ReplenishStockService>();
+            services.AddScoped<ListStockMovementsService>();
+
+            services.AddScoped<IToolRepository, ToolRepository>();
+            services.AddScoped<CreateToolService>();
+            services.AddScoped<EditToolService>();
+            services.AddScoped<GetToolService>();
+            services.AddScoped<ListToolsService>();
+            services.AddScoped<WithdrawToolService>();
+            services.AddScoped<ReturnToolService>();
+            services.AddScoped<ListActiveToolUsagesService>();
 
             return services;
         }
