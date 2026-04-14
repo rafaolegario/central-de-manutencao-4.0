@@ -68,7 +68,7 @@ services:
 
          DB         localhost:${POSTGRES_PORT:-5433}
          API        http://localhost:8080
-         Swagger    http://localhost:8080/swagger/ui
+         Swagger    http://localhost:8080/swagger
          Mobile     http://localhost:3000
 
       ========================================================

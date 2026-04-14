@@ -48,7 +48,7 @@ Na primeira execução o Docker vai baixar as imagens e compilar os projetos —
 |---|---|
 | Mobile (web) | http://localhost:3000 |
 | API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger/ui |
+| Swagger UI | http://localhost:8080/swagger |
 | PostgreSQL | `localhost:5432` |
 
 Para parar tudo: `docker compose down`
