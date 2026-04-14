@@ -1,0 +1,78 @@
+services:
+  db:
+    image: postgres:16
+    container_name: ${POSTGRES_CONTAINER:-manutencao_db}
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: src/central-de-manutencao.Api/Dockerfile
+    container_name: manutencao_api
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - AdminUser__Email=${ADMIN_EMAIL}
+      - AdminUser__Password=${ADMIN_PASSWORD}
+      - Settings__Jwt__SigningKey=${JWT_SIGNING_KEY}
+      - Settings__Jwt__ExpiresMinutes=${JWT_EXPIRES_MINUTES:-60}
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/swagger/v1/swagger.json || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  mobile:
+    build:
+      context: ./mobile
+    container_name: manutencao_mobile
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      - EXPO_PUBLIC_API_URL=http://localhost:8080
+    depends_on:
+      - api
+
+  banner:
+    image: alpine:3
+    depends_on:
+      api:
+        condition: service_healthy
+    command: >
+      sh -c "echo '
+      ========================================================
+         Central de Manutenção 4.0 — all services running!
+      ========================================================
+
+         DB         localhost:${POSTGRES_PORT:-5433}
+         API        http://localhost:8080
+         Swagger    http://localhost:8080/swagger/ui
+         Mobile     http://localhost:3000
+
+      ========================================================
+      '"
+
+volumes:
+  postgres_data:
