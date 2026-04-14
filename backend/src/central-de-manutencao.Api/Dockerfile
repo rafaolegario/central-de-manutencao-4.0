@@ -2,6 +2,8 @@
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-2 curl \
+    && rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -12,10 +14,10 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["src/central-de-manutencao-4.0.Api/central-de-manutencao.Api.csproj", "src/central-de-manutencao-4.0.Api/"]
-RUN dotnet restore "./src/central-de-manutencao-4.0.Api/central-de-manutencao.Api.csproj"
+COPY ["src/central-de-manutencao.Api/central-de-manutencao.Api.csproj", "src/central-de-manutencao.Api/"]
+RUN dotnet restore "./src/central-de-manutencao.Api/central-de-manutencao.Api.csproj"
 COPY . .
-WORKDIR "/src/src/central-de-manutencao-4.0.Api"
+WORKDIR "/src/src/central-de-manutencao.Api"
 RUN dotnet build "./central-de-manutencao.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
