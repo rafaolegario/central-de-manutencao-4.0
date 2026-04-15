@@ -20,20 +20,6 @@ Só isso. Não é necessário ter .NET, Node.js ou PostgreSQL instalados localme
 cp .env.example .env
 ```
 
-Abra o arquivo `.env` e preencha os valores:
-
-| Variável | Descrição |
-|---|---|
-| `POSTGRES_USER` | Usuário do banco de dados |
-| `POSTGRES_PASSWORD` | Senha do banco de dados |
-| `POSTGRES_DB` | Nome do banco de dados |
-| `POSTGRES_PORT` | Porta exposta do PostgreSQL (padrão: `5432`) |
-| `POSTGRES_CONTAINER` | Nome do container do banco (padrão: `manutencao_db`) |
-| `ADMIN_EMAIL` | E-mail do usuário admin criado no primeiro boot |
-| `ADMIN_PASSWORD` | Senha do usuário admin |
-| `JWT_SIGNING_KEY` | Chave secreta para assinar tokens JWT (mínimo 32 caracteres) |
-| `JWT_EXPIRES_MINUTES` | Tempo de expiração do token em minutos (padrão: `60`) |
-
 ### 2. Suba os serviços
 
 ```bash
