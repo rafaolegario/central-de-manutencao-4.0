@@ -425,6 +425,26 @@ export const MOCK_SERVICE_ORDERS: MockServiceOrder[] = [
     assignedBy: 'u-001',
     completionNotes: null,
   },
+  {
+    id: 'os-013',
+    title: 'Reparo em quadro de comando — Prensa 2',
+    description:
+      'Quadro de comando da Prensa 2 apresentando disparo intermitente de disjuntor principal. Necessária inspeção de contatores, termostato e cabeamento interno.',
+    location: 'Galpão B — Prensa 2',
+    createdAt: '2026-04-10T07:30:00Z',
+    updatedAt: '2026-04-13T09:00:00Z',
+    assignedAt: '2026-04-11T08:00:00Z',
+    dueDate: '2026-04-20T18:00:00Z',
+    completedAt: null,
+    approvedAt: null,
+    rejectedAt: null,
+    priority: 'High',
+    status: 'InProgress',
+    technicianId: 'u-002',
+    createdBy: 'u-001',
+    assignedBy: 'u-001',
+    completionNotes: null,
+  },
 ];
 
 // ─── Mock Service Order Logs ─────────────────────────────────────────────────
@@ -471,6 +491,127 @@ export const MOCK_SERVICE_ORDER_LOGS: MockServiceOrderLog[] = [
   { id: 'log-012-1', serviceOrderId: 'os-012', oldStatus: 'Open', newStatus: 'Assigned', changedAt: '2026-04-07T09:00:00Z', changedBy: 'u-001', description: 'João Silva designado para verificação de aterramento.' },
 ];
 
+// ─── Tools & Stock — Types ──────────────────────────────────────────────────
+
+export type StockMovementType = 'In' | 'Out';
+
+export interface MockTool {
+  id: string;
+  code: string;
+  name: string;
+  totalQuantity: number;
+  availableQuantity: number;
+  createdAt: string;
+}
+
+export interface MockToolUsage {
+  id: string;
+  toolId: string;
+  workOrderId: string;
+  technicianId: string;
+  withdrawnAt: string;
+  returnedAt: string | null;
+}
+
+export interface MockStockItem {
+  id: string;
+  code: string;
+  name: string;
+  quantity: number;
+  minQuantity: number;
+  createdAt: string;
+}
+
+export interface MockStockMovement {
+  id: string;
+  stockItemId: string;
+  type: StockMovementType;
+  quantity: number;
+  workOrderId: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export const STOCK_MOVEMENT_LABELS: Record<StockMovementType, string> = {
+  In: 'Entrada',
+  Out: 'Saída',
+};
+
+// ─── Mock Tools ─────────────────────────────────────────────────────────────
+
+export const MOCK_TOOLS: MockTool[] = [
+  { id: 't-001', code: 'MLT-DIG-01', name: 'Multímetro Digital Fluke 87V', totalQuantity: 5, availableQuantity: 3, createdAt: '2025-05-10T09:00:00Z' },
+  { id: 't-002', code: 'CHV-IMP-18', name: 'Chave de Impacto 1/2" — 18V', totalQuantity: 3, availableQuantity: 1, createdAt: '2025-06-02T10:00:00Z' },
+  { id: 't-003', code: 'FUR-IND-22', name: 'Furadeira Industrial 22mm', totalQuantity: 4, availableQuantity: 4, createdAt: '2025-06-20T11:00:00Z' },
+  { id: 't-004', code: 'JGC-ESTR-12', name: 'Jogo de Chaves Estrela (12 peças)', totalQuantity: 10, availableQuantity: 7, createdAt: '2025-07-01T08:00:00Z' },
+  { id: 't-005', code: 'ANL-VIB-01', name: 'Analisador de Vibração SKF', totalQuantity: 2, availableQuantity: 0, createdAt: '2025-07-15T09:30:00Z' },
+  { id: 't-006', code: 'TRM-FLIR-E6', name: 'Termovisor FLIR E6', totalQuantity: 2, availableQuantity: 1, createdAt: '2025-08-03T10:00:00Z' },
+  { id: 't-007', code: 'TRQ-100', name: 'Torquímetro 20–100 Nm', totalQuantity: 6, availableQuantity: 6, createdAt: '2025-09-12T09:00:00Z' },
+  { id: 't-008', code: 'PQM-DIG-01', name: 'Paquímetro Digital 150mm', totalQuantity: 8, availableQuantity: 5, createdAt: '2025-10-05T08:30:00Z' },
+];
+
+// ─── Mock Tool Usages (active — ReturnedAt is null) ─────────────────────────
+
+export const MOCK_TOOL_USAGES: MockToolUsage[] = [
+  // Tool t-001 (Multímetro) — 2 out
+  { id: 'tu-001', toolId: 't-001', workOrderId: 'os-001', technicianId: 'u-004', withdrawnAt: '2026-04-13T09:15:00Z', returnedAt: null },
+  { id: 'tu-002', toolId: 't-001', workOrderId: 'os-013', technicianId: 'u-002', withdrawnAt: '2026-04-14T08:30:00Z', returnedAt: null },
+
+  // Tool t-002 (Chave de Impacto) — 2 out
+  { id: 'tu-003', toolId: 't-002', workOrderId: 'os-001', technicianId: 'u-004', withdrawnAt: '2026-04-13T09:20:00Z', returnedAt: null },
+  { id: 'tu-004', toolId: 't-002', workOrderId: 'os-013', technicianId: 'u-002', withdrawnAt: '2026-04-14T08:32:00Z', returnedAt: null },
+
+  // Tool t-004 (Jogo de Chaves Estrela) — 3 out
+  { id: 'tu-005', toolId: 't-004', workOrderId: 'os-001', technicianId: 'u-004', withdrawnAt: '2026-04-12T14:00:00Z', returnedAt: null },
+  { id: 'tu-006', toolId: 't-004', workOrderId: 'os-013', technicianId: 'u-002', withdrawnAt: '2026-04-13T10:00:00Z', returnedAt: null },
+  { id: 'tu-007', toolId: 't-004', workOrderId: 'os-013', technicianId: 'u-002', withdrawnAt: '2026-04-14T08:35:00Z', returnedAt: null },
+
+  // Tool t-005 (Analisador de Vibração) — 2 out (all)
+  { id: 'tu-008', toolId: 't-005', workOrderId: 'os-001', technicianId: 'u-004', withdrawnAt: '2026-04-10T09:00:00Z', returnedAt: null },
+  { id: 'tu-009', toolId: 't-005', workOrderId: 'os-013', technicianId: 'u-002', withdrawnAt: '2026-04-11T13:00:00Z', returnedAt: null },
+
+  // Tool t-006 (Termovisor) — 1 out
+  { id: 'tu-010', toolId: 't-006', workOrderId: 'os-001', technicianId: 'u-004', withdrawnAt: '2026-04-14T10:00:00Z', returnedAt: null },
+
+  // Tool t-008 (Paquímetro) — 3 out
+  { id: 'tu-011', toolId: 't-008', workOrderId: 'os-001', technicianId: 'u-004', withdrawnAt: '2026-04-13T09:25:00Z', returnedAt: null },
+  { id: 'tu-012', toolId: 't-008', workOrderId: 'os-013', technicianId: 'u-002', withdrawnAt: '2026-04-14T08:40:00Z', returnedAt: null },
+  { id: 'tu-013', toolId: 't-008', workOrderId: 'os-013', technicianId: 'u-002', withdrawnAt: '2026-04-14T11:00:00Z', returnedAt: null },
+];
+
+// ─── Mock Stock Items ────────────────────────────────────────────────────────
+
+export const MOCK_STOCK_ITEMS: MockStockItem[] = [
+  { id: 's-001', code: 'BRG-6205', name: 'Rolamento SKF 6205-2RS', quantity: 24, minQuantity: 10, createdAt: '2025-04-10T08:00:00Z' },
+  { id: 's-002', code: 'BELT-A42', name: 'Correia em V A42', quantity: 3, minQuantity: 5, createdAt: '2025-04-15T08:00:00Z' },
+  { id: 's-003', code: 'OIL-HYD46', name: 'Óleo Hidráulico ISO 46 (L)', quantity: 18, minQuantity: 10, createdAt: '2025-05-02T08:00:00Z' },
+  { id: 's-004', code: 'FLT-AIR300', name: 'Filtro de Ar Comprimido 300', quantity: 2, minQuantity: 6, createdAt: '2025-05-18T08:00:00Z' },
+  { id: 's-005', code: 'SCR-M8X25', name: 'Parafuso Sextavado M8×25', quantity: 540, minQuantity: 100, createdAt: '2025-06-01T08:00:00Z' },
+  { id: 's-006', code: 'LMP-LED20W', name: 'Lâmpada LED 20W E27', quantity: 45, minQuantity: 20, createdAt: '2025-06-15T08:00:00Z' },
+  { id: 's-007', code: 'FUSE-10A', name: 'Fusível Cartucho 10A', quantity: 6, minQuantity: 15, createdAt: '2025-07-01T08:00:00Z' },
+  { id: 's-008', code: 'WIRE-2.5MM', name: 'Cabo Flexível 2,5mm² (m)', quantity: 120, minQuantity: 50, createdAt: '2025-07-20T08:00:00Z' },
+  { id: 's-009', code: 'JNT-XJ42', name: 'Junta de Vedação XJ-42', quantity: 8, minQuantity: 3, createdAt: '2025-08-10T08:00:00Z' },
+  { id: 's-010', code: 'PNT-IND-GRY', name: 'Tinta Industrial Cinza (Lata 3,6L)', quantity: 12, minQuantity: 5, createdAt: '2025-09-01T08:00:00Z' },
+];
+
+// ─── Mock Stock Movements ────────────────────────────────────────────────────
+
+export const MOCK_STOCK_MOVEMENTS: MockStockMovement[] = [
+  { id: 'sm-001', stockItemId: 's-001', type: 'In', quantity: 20, workOrderId: null, note: 'Compra inicial — fornecedor Rolamar.', createdAt: '2025-04-10T08:30:00Z' },
+  { id: 'sm-002', stockItemId: 's-001', type: 'In', quantity: 10, workOrderId: null, note: 'Reposição trimestral.', createdAt: '2026-01-12T09:00:00Z' },
+  { id: 'sm-003', stockItemId: 's-001', type: 'Out', quantity: 6, workOrderId: 'os-001', note: 'Consumo OS-001.', createdAt: '2026-04-02T10:00:00Z' },
+  { id: 'sm-004', stockItemId: 's-002', type: 'In', quantity: 15, workOrderId: null, note: 'Compra fornecedor CorreiaJá.', createdAt: '2025-06-20T10:00:00Z' },
+  { id: 'sm-005', stockItemId: 's-002', type: 'Out', quantity: 12, workOrderId: null, note: 'Consumo acumulado Q1 2026.', createdAt: '2026-03-15T14:00:00Z' },
+  { id: 'sm-006', stockItemId: 's-003', type: 'In', quantity: 40, workOrderId: null, note: 'Compra — tambor 40L.', createdAt: '2025-11-05T09:00:00Z' },
+  { id: 'sm-007', stockItemId: 's-003', type: 'Out', quantity: 22, workOrderId: 'os-004', note: 'Troca total — Compressor 2.', createdAt: '2026-03-26T11:00:00Z' },
+  { id: 'sm-008', stockItemId: 's-004', type: 'In', quantity: 10, workOrderId: null, note: 'Compra inicial.', createdAt: '2025-06-01T08:00:00Z' },
+  { id: 'sm-009', stockItemId: 's-004', type: 'Out', quantity: 8, workOrderId: null, note: 'Substituição semestral.', createdAt: '2026-02-10T10:00:00Z' },
+  { id: 'sm-010', stockItemId: 's-007', type: 'In', quantity: 20, workOrderId: null, note: 'Compra lote inicial.', createdAt: '2025-07-15T09:00:00Z' },
+  { id: 'sm-011', stockItemId: 's-007', type: 'Out', quantity: 14, workOrderId: null, note: 'Consumo geral.', createdAt: '2026-03-01T10:00:00Z' },
+  { id: 'sm-012', stockItemId: 's-009', type: 'In', quantity: 8, workOrderId: null, note: 'Reposição após pedido especial XJ-42.', createdAt: '2026-04-08T14:00:00Z' },
+  { id: 'sm-013', stockItemId: 's-010', type: 'In', quantity: 12, workOrderId: null, note: 'Compra para manutenção de pintura.', createdAt: '2026-02-20T08:30:00Z' },
+];
+
 // ─── Helper Functions ─────────────────────────────────────────────────────────
 
 export function getUserById(id: string): MockUser | undefined {
@@ -507,4 +648,116 @@ export function formatDateTime(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('pt-BR') + ' ' +
     new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── Tools & Stock — Helpers & Mutations ────────────────────────────────────
+
+export function getToolById(id: string): MockTool | undefined {
+  return MOCK_TOOLS.find((t) => t.id === id);
+}
+
+export function getStockItemById(id: string): MockStockItem | undefined {
+  return MOCK_STOCK_ITEMS.find((s) => s.id === id);
+}
+
+export function isLowStock(item: MockStockItem): boolean {
+  return item.quantity < item.minQuantity;
+}
+
+export function getOpenUsagesForTool(toolId: string): MockToolUsage[] {
+  return MOCK_TOOL_USAGES.filter((u) => u.toolId === toolId && u.returnedAt === null).sort(
+    (a, b) => new Date(b.withdrawnAt).getTime() - new Date(a.withdrawnAt).getTime()
+  );
+}
+
+export function getActiveUsagesForTechnician(technicianId: string): MockToolUsage[] {
+  return MOCK_TOOL_USAGES.filter(
+    (u) => u.technicianId === technicianId && u.returnedAt === null
+  ).sort((a, b) => new Date(b.withdrawnAt).getTime() - new Date(a.withdrawnAt).getTime());
+}
+
+export function getInProgressOrdersForTechnician(technicianId: string): MockServiceOrder[] {
+  return MOCK_SERVICE_ORDERS.filter(
+    (o) => o.technicianId === technicianId && o.status === 'InProgress'
+  );
+}
+
+export function getMovementsForStockItem(stockItemId: string): MockStockMovement[] {
+  return MOCK_STOCK_MOVEMENTS.filter((m) => m.stockItemId === stockItemId).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+// Mutation helpers — mutate module arrays in place and return the updated entities
+// so detail screens can refresh their local state.
+
+let usageCounter = MOCK_TOOL_USAGES.length;
+let movementCounter = MOCK_STOCK_MOVEMENTS.length;
+
+export function withdrawTool(params: {
+  toolId: string;
+  technicianId: string;
+  workOrderId: string;
+}): { tool: MockTool; usage: MockToolUsage } | { error: string } {
+  const tool = getToolById(params.toolId);
+  if (!tool) return { error: 'Ferramenta não encontrada.' };
+  if (tool.availableQuantity <= 0)
+    return { error: 'Ferramenta indisponível no momento.' };
+
+  tool.availableQuantity -= 1;
+
+  usageCounter += 1;
+  const usage: MockToolUsage = {
+    id: `tu-${String(usageCounter).padStart(3, '0')}`,
+    toolId: params.toolId,
+    workOrderId: params.workOrderId,
+    technicianId: params.technicianId,
+    withdrawnAt: new Date().toISOString(),
+    returnedAt: null,
+  };
+  MOCK_TOOL_USAGES.push(usage);
+
+  return { tool: { ...tool }, usage };
+}
+
+export function returnTool(usageId: string): { tool: MockTool; usage: MockToolUsage } | { error: string } {
+  const usage = MOCK_TOOL_USAGES.find((u) => u.id === usageId);
+  if (!usage) return { error: 'Registro de uso não encontrado.' };
+  if (usage.returnedAt !== null) return { error: 'Esta ferramenta já foi devolvida.' };
+
+  const tool = getToolById(usage.toolId);
+  if (!tool) return { error: 'Ferramenta associada não encontrada.' };
+
+  usage.returnedAt = new Date().toISOString();
+  tool.availableQuantity = Math.min(tool.totalQuantity, tool.availableQuantity + 1);
+
+  return { tool: { ...tool }, usage: { ...usage } };
+}
+
+export function replenishStock(params: {
+  stockItemId: string;
+  quantity: number;
+  note?: string;
+}): { item: MockStockItem; movement: MockStockMovement } | { error: string } {
+  if (params.quantity <= 0)
+    return { error: 'Quantidade deve ser maior que zero.' };
+
+  const item = getStockItemById(params.stockItemId);
+  if (!item) return { error: 'Item de estoque não encontrado.' };
+
+  item.quantity += params.quantity;
+
+  movementCounter += 1;
+  const movement: MockStockMovement = {
+    id: `sm-${String(movementCounter).padStart(3, '0')}`,
+    stockItemId: params.stockItemId,
+    type: 'In',
+    quantity: params.quantity,
+    workOrderId: null,
+    note: params.note?.trim() ? params.note.trim() : null,
+    createdAt: new Date().toISOString(),
+  };
+  MOCK_STOCK_MOVEMENTS.push(movement);
+
+  return { item: { ...item }, movement };
 }
