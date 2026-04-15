@@ -35,6 +35,34 @@ export default function AppLayout() {
         name="users/create"
         options={{ headerShown: true, title: 'Novo Usuário' }}
       />
+      <Stack.Screen
+        name="tools/[id]"
+        options={{ headerShown: true, title: 'Ferramenta' }}
+      />
+      <Stack.Screen
+        name="tools/create"
+        options={{ headerShown: true, title: 'Nova Ferramenta' }}
+      />
+      <Stack.Screen
+        name="tools/withdraw"
+        options={{ headerShown: true, title: 'Retirar Ferramenta' }}
+      />
+      <Stack.Screen
+        name="stock/[id]"
+        options={{ headerShown: true, title: 'Item de Estoque' }}
+      />
+      <Stack.Screen
+        name="stock/create"
+        options={{ headerShown: true, title: 'Novo Item' }}
+      />
+      <Stack.Screen
+        name="stock/replenish"
+        options={{ headerShown: true, title: 'Reabastecer' }}
+      />
+      <Stack.Screen
+        name="stock/movements"
+        options={{ headerShown: true, title: 'Movimentações' }}
+      />
     </Stack>
   );
 }
