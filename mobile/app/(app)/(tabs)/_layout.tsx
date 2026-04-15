@@ -2,8 +2,12 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Tabs } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { HapticTab } from '@/components/haptic-tab';
+import { useAuth } from '@/context/AuthContext';
 
 export default function TabsLayout() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+
   return (
     <Tabs
       screenOptions={{
@@ -49,6 +53,27 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="people" size={24} color={color} />
           ),
+          href: isAdmin ? '/(app)/(tabs)/users' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="inventory"
+        options={{
+          title: 'Inventário',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="inventory-2" size={24} color={color} />
+          ),
+          href: isAdmin ? '/(app)/(tabs)/inventory' : null,
+        }}
+      />
+      <Tabs.Screen
+        name="tools"
+        options={{
+          title: 'Ferramentas',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="build" size={24} color={color} />
+          ),
+          href: isAdmin ? null : '/(app)/(tabs)/tools',
         }}
       />
       <Tabs.Screen
