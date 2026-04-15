@@ -14,7 +14,13 @@ import ServiceOrderCard from '@/components/ServiceOrderCard';
 import StatsCard from '@/components/StatsCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { MOCK_SERVICE_ORDERS } from '@/data/mock';
+import {
+  MOCK_SERVICE_ORDERS,
+  MOCK_STOCK_ITEMS,
+  MOCK_TOOL_USAGES,
+  getActiveUsagesForTechnician,
+  isLowStock,
+} from '@/data/mock';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -34,6 +40,12 @@ export default function DashboardScreen() {
   const doneCount = MOCK_SERVICE_ORDERS.filter(
     (o) => o.status === 'Completed' || o.status === 'Approved'
   ).length;
+
+  const toolsInUseCount = MOCK_TOOL_USAGES.filter((u) => u.returnedAt === null).length;
+  const lowStockCount = MOCK_STOCK_ITEMS.filter(isLowStock).length;
+  const myToolsInUseCount = user
+    ? getActiveUsagesForTechnician(user.id).length
+    : 0;
 
   const recentOrders = [...MOCK_SERVICE_ORDERS]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -96,6 +108,38 @@ export default function DashboardScreen() {
               style={styles.statsCardFlex}
             />
           </View>
+
+          {user?.role === 'Admin' ? (
+            <View style={styles.statsRow}>
+              <StatsCard
+                title="Ferram. em uso"
+                value={toolsInUseCount}
+                icon="build"
+                iconBgColor="#FFEDD5"
+                iconColor="#C2410C"
+                style={styles.statsCardFlex}
+              />
+              <StatsCard
+                title="Itens em baixa"
+                value={lowStockCount}
+                icon="warning-amber"
+                iconBgColor="#FEE2E2"
+                iconColor="#DC2626"
+                style={styles.statsCardFlex}
+              />
+            </View>
+          ) : (
+            <View style={styles.statsRow}>
+              <StatsCard
+                title="Minhas ferram."
+                value={myToolsInUseCount}
+                icon="build"
+                iconBgColor="#FFEDD5"
+                iconColor="#C2410C"
+                style={styles.statsCardFlex}
+              />
+            </View>
+          )}
         </View>
 
         {/* Recent orders */}
