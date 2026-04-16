@@ -101,13 +101,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Demo hint */}
-          <View style={styles.hint}>
-            <Text style={styles.hintTitle}>Credenciais de demonstração</Text>
-            <Text style={styles.hintLine}>admin@empresa.com / 123456</Text>
-            <Text style={styles.hintLine}>joao.silva@empresa.com / 123456</Text>
-            <Text style={styles.hintLine}>rafael.mendes@empresa.com / 123456</Text>
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -167,22 +160,5 @@ const styles = StyleSheet.create({
     color: Colors.error,
     textAlign: 'center',
     marginTop: 12,
-  },
-  hint: {
-    marginTop: 36,
-    padding: 16,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: Colors.radiusMd,
-  },
-  hintTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.primary,
-    marginBottom: 8,
-  },
-  hintLine: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 2,
   },
 });
