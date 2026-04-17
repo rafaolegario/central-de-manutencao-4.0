@@ -2,10 +2,10 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { MockTool } from '@/data/mock';
+import type { Tool } from '@/types/api';
 
 interface ToolCardProps {
-  tool: MockTool;
+  tool: Tool;
   onPress: () => void;
 }
 
