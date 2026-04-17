@@ -2,15 +2,15 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { MockStockItem, isLowStock } from '@/data/mock';
+import type { StockItem } from '@/types/api';
 
 interface StockCardProps {
-  item: MockStockItem;
+  item: StockItem;
   onPress: () => void;
 }
 
 export default function StockCard({ item, onPress }: StockCardProps) {
-  const low = isLowStock(item);
+  const low = item.isLow;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
