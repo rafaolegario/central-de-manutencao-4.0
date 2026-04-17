@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { PRIORITY_LABELS, ServiceOrderPriority } from '@/data/mock';
+import { PRIORITY_LABELS } from '@/constants/labels';
+import type { ServiceOrderPriority } from '@/types/api';
 
 interface PriorityBadgeProps {
   priority: ServiceOrderPriority;
