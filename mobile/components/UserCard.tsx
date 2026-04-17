@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { getInitials, MockUser, ROLE_LABELS, SPECIALTY_LABELS } from '@/data/mock';
+import { ROLE_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
+import { getInitials } from '@/utils/format';
+import { MockUser } from '@/data/mock';
 
 interface UserCardProps {
   user: MockUser;
