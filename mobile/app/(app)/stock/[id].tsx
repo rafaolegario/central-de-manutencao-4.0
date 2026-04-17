@@ -1,13 +1,13 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import MetaRow from '@/components/MetaRow';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { getStockItemById, isLowStock, MockStockItem } from '@/data/mock';
+import { useStockItem } from '@/services/stock/useStock';
 import { formatDate } from '@/utils/format';
 
 export default function StockDetailScreen() {
@@ -15,15 +15,12 @@ export default function StockDetailScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [item, setItem] = useState<MockStockItem | undefined>(
-    getStockItemById(id)
-  );
+  const { data: item, isLoading, error, refetch } = useStockItem(id);
 
   useFocusEffect(
     useCallback(() => {
-      const fresh = getStockItemById(id);
-      setItem(fresh ? { ...fresh } : undefined);
-    }, [id])
+      refetch();
+    }, [refetch])
   );
 
   if (user?.role !== 'Admin') {
@@ -41,7 +38,17 @@ export default function StockDetailScreen() {
     );
   }
 
-  if (!item) {
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.notFound}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !item) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.notFound}>
@@ -53,7 +60,7 @@ export default function StockDetailScreen() {
     );
   }
 
-  const low = isLowStock(item);
+  const low = item.isLow;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
