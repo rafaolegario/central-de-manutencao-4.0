@@ -15,9 +15,17 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { PRIORITY_LABELS, ServiceOrderPriority } from '@/data/mock';
+import { PRIORITY_LABELS } from '@/data/mock';
+import { useCreateOrder } from '@/services/orders/useOrders';
+import type { ServiceOrderPriority } from '@/types/api';
 
 const PRIORITIES: ServiceOrderPriority[] = ['Low', 'Medium', 'High', 'Critical'];
+
+function parseDueDate(input: string): string | undefined {
+  const [day, month, year] = input.split('/');
+  if (!day || !month || !year || year.length !== 4) return undefined;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
 
 export default function CreateOrderScreen() {
   const { user } = useAuth();
@@ -28,8 +36,9 @@ export default function CreateOrderScreen() {
   const [location, setLocation] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<ServiceOrderPriority>('Medium');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { mutate: createOrder, isLoading: isSubmitting, error: apiError } = useCreateOrder();
 
   if (user?.role !== 'Admin') {
     return (
@@ -56,13 +65,20 @@ export default function CreateOrderScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    setIsSubmitting(true);
-    // TODO: POST to API and update local state
-    await new Promise((r) => setTimeout(r, 700));
-    setIsSubmitting(false);
-    Alert.alert('Sucesso', 'Ordem de serviço criada com sucesso!', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    try {
+      await createOrder({
+        title: title.trim(),
+        description: description.trim(),
+        location: location.trim() || undefined,
+        priority,
+        dueDate: dueDate ? parseDueDate(dueDate) : undefined,
+      });
+      Alert.alert('Sucesso', 'Ordem de serviço criada com sucesso!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch {
+      // error is surfaced via apiError state
+    }
   };
 
   return (
@@ -149,6 +165,14 @@ export default function CreateOrderScreen() {
             ))}
           </View>
 
+          {apiError && (
+            <View style={styles.apiErrorBox}>
+              <Text style={styles.apiErrorText}>
+                {apiError.errors?.[0] ?? 'Erro ao criar ordem. Tente novamente.'}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.gapLg} />
 
           <AppButton
@@ -209,6 +233,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
     fontWeight: '500',
+  },
+  apiErrorBox: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: Colors.radiusLg,
+  },
+  apiErrorText: {
+    fontSize: 13,
+    color: '#991B1B',
   },
   restricted: {
     flex: 1,
