@@ -64,36 +64,12 @@ export interface MockCredential {
 
 // ─── Label Maps ─────────────────────────────────────────────────────────────
 
-export const STATUS_LABELS: Record<ServiceOrderStatus, string> = {
-  Open: 'Aberta',
-  Assigned: 'Atribuída',
-  InProgress: 'Em Andamento',
-  Paused: 'Pausada',
-  Completed: 'Concluída',
-  Approved: 'Aprovada',
-  Rejected: 'Rejeitada',
-  Reopened: 'Reaberta',
-  Canceled: 'Cancelada',
-};
-
-export const PRIORITY_LABELS: Record<ServiceOrderPriority, string> = {
-  Low: 'Baixa',
-  Medium: 'Média',
-  High: 'Alta',
-  Critical: 'Crítica',
-};
-
-export const ROLE_LABELS: Record<UserRole, string> = {
-  Admin: 'Administrador',
-  Technician: 'Técnico',
-};
-
-export const SPECIALTY_LABELS: Record<UserSpecialty, string> = {
-  Eletrician: 'Eletricista',
-  Mechanic: 'Mecânico',
-  Electromechanic: 'Eletromecânico',
-  General: 'Geral',
-};
+export {
+  STATUS_LABELS,
+  PRIORITY_LABELS,
+  ROLE_LABELS,
+  SPECIALTY_LABELS,
+} from '@/constants/labels';
 
 // ─── Mock Credentials ───────────────────────────────────────────────────────
 
@@ -532,10 +508,7 @@ export interface MockStockMovement {
   createdAt: string;
 }
 
-export const STOCK_MOVEMENT_LABELS: Record<StockMovementType, string> = {
-  In: 'Entrada',
-  Out: 'Saída',
-};
+export { STOCK_MOVEMENT_LABELS } from '@/constants/labels';
 
 // ─── Mock Tools ─────────────────────────────────────────────────────────────
 
@@ -633,22 +606,7 @@ export function getTechnicianName(id: string | null): string {
   return getUserById(id)?.name ?? 'Desconhecido';
 }
 
-export function getInitials(name: string): string {
-  const parts = name.trim().split(' ');
-  if (parts.length === 1) return parts[0][0].toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-export function formatDate(iso: string | null): string {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR');
-}
-
-export function formatDateTime(iso: string | null): string {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('pt-BR') + ' ' +
-    new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
+export { formatDate, formatDateTime, getInitials } from '@/utils/format';
 
 // ─── Tools & Stock — Helpers & Mutations ────────────────────────────────────
 
