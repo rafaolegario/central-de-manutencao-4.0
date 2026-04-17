@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
+import MetaRow from '@/components/MetaRow';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { formatDate, formatDateTime } from '@/data/mock';
+import { formatDate, formatDateTime } from '@/utils/format';
 import { useOrders } from '@/services/orders/useOrders';
 import { useReturnTool, useTool } from '@/services/tools/useTools';
 
@@ -141,13 +142,13 @@ export default function ToolDetailScreen() {
 
         {/* Metadata */}
         <View style={styles.card}>
-          <MetaRow label="Código" value={tool.code} />
+          <MetaRow label="Código" value={tool.code} labelWidth={130} />
           <View style={styles.cardDivider} />
-          <MetaRow label="Total" value={String(tool.totalQuantity)} />
+          <MetaRow label="Total" value={String(tool.totalQuantity)} labelWidth={130} />
           <View style={styles.cardDivider} />
-          <MetaRow label="Disponíveis" value={String(tool.availableQuantity)} />
+          <MetaRow label="Disponíveis" value={String(tool.availableQuantity)} labelWidth={130} />
           <View style={styles.cardDivider} />
-          <MetaRow label="Cadastrada em" value={formatDate(tool.createdAt)} />
+          <MetaRow label="Cadastrada em" value={formatDate(tool.createdAt)} labelWidth={130} />
         </View>
 
         {/* Active usages */}
@@ -239,32 +240,6 @@ export default function ToolDetailScreen() {
   );
 }
 
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={metaStyles.row}>
-      <Text style={metaStyles.label}>{label}</Text>
-      <Text style={metaStyles.value}>{value}</Text>
-    </View>
-  );
-}
-
-const metaStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-  },
-  label: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    width: 130,
-  },
-  value: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    flex: 1,
-    fontWeight: '500',
-  },
-});
 
 const styles = StyleSheet.create({
   safe: {
