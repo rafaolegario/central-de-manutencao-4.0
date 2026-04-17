@@ -2,16 +2,18 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { formatDate, getTechnicianName, MockServiceOrder } from '@/data/mock';
+import { formatDate } from '@/data/mock';
+import type { ServiceOrder } from '@/types/api';
 import PriorityBadge from './PriorityBadge';
 import StatusBadge from './StatusBadge';
 
 interface ServiceOrderCardProps {
-  order: MockServiceOrder;
+  order: ServiceOrder;
   onPress: () => void;
+  technicianName?: string;
 }
 
-export default function ServiceOrderCard({ order, onPress }: ServiceOrderCardProps) {
+export default function ServiceOrderCard({ order, onPress, technicianName = 'Não atribuído' }: ServiceOrderCardProps) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <View style={styles.badgeRow}>
@@ -42,7 +44,7 @@ export default function ServiceOrderCard({ order, onPress }: ServiceOrderCardPro
           <Text style={styles.metaText}>{formatDate(order.createdAt)}</Text>
         </View>
         <Text style={styles.technicianText}>
-          {getTechnicianName(order.technicianId)}
+          {technicianName}
         </Text>
       </View>
     </TouchableOpacity>
