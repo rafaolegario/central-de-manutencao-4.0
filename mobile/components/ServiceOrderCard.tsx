@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { formatDate } from '@/data/mock';
+import { formatDate } from '@/utils/format';
 import type { ServiceOrder } from '@/types/api';
 import PriorityBadge from './PriorityBadge';
 import StatusBadge from './StatusBadge';
