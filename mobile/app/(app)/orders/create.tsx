@@ -15,7 +15,7 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { PRIORITY_LABELS } from '@/data/mock';
+import { PRIORITY_LABELS } from '@/constants/labels';
 import { useCreateOrder } from '@/services/orders/useOrders';
 import type { ServiceOrderPriority } from '@/types/api';
 

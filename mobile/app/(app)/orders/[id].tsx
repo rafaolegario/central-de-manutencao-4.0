@@ -11,10 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
+import MetaRow from '@/components/MetaRow';
 import PriorityBadge from '@/components/PriorityBadge';
 import StatusBadge from '@/components/StatusBadge';
 import { Colors } from '@/constants/theme';
-import { formatDate, formatDateTime } from '@/data/mock';
+import { formatDate, formatDateTime } from '@/utils/format';
 import { useAuth } from '@/context/AuthContext';
 import { useOrder, useUpdateOrderStatus } from '@/services/orders/useOrders';
 import { useUsers } from '@/services/users/useUsers';
@@ -205,33 +206,6 @@ export default function OrderDetailScreen() {
     </SafeAreaView>
   );
 }
-
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={metaStyles.row}>
-      <Text style={metaStyles.label}>{label}</Text>
-      <Text style={metaStyles.value}>{value}</Text>
-    </View>
-  );
-}
-
-const metaStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-  },
-  label: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    width: 110,
-  },
-  value: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    flex: 1,
-    fontWeight: '500',
-  },
-});
 
 function LogEntry({
   log,

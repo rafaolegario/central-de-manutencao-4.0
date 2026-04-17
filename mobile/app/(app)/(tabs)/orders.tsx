@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ServiceOrderCard from '@/components/ServiceOrderCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { STATUS_LABELS } from '@/data/mock';
+import { STATUS_LABELS } from '@/constants/labels';
 import { useOrders } from '@/services/orders/useOrders';
 import { useUsers } from '@/services/users/useUsers';
 import type { ServiceOrderStatus } from '@/types/api';
