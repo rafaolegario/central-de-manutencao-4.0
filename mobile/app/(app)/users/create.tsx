@@ -15,7 +15,8 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { SPECIALTY_LABELS, UserSpecialty } from '@/data/mock';
+import { SPECIALTY_LABELS } from '@/constants/labels';
+import type { UserSpecialty } from '@/types/api';
 
 const SPECIALTIES: UserSpecialty[] = [
   'Eletrician',

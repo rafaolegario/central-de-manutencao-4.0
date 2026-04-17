@@ -12,15 +12,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  formatDate,
-  getInitials,
-  getUserById,
-  MOCK_SERVICE_ORDERS,
-  MockUser,
-  ROLE_LABELS,
-  SPECIALTY_LABELS,
-} from '@/data/mock';
+import { ROLE_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
+import { getUserById, MOCK_SERVICE_ORDERS, MockUser } from '@/data/mock';
+import { formatDate, getInitials } from '@/utils/format';
 
 export default function UserDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

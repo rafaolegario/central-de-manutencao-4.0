@@ -5,12 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  getInitials,
-  MOCK_SERVICE_ORDERS,
-  ROLE_LABELS,
-  SPECIALTY_LABELS,
-} from '@/data/mock';
+import { ROLE_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
+import { MOCK_SERVICE_ORDERS } from '@/data/mock';
+import { getInitials } from '@/utils/format';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
