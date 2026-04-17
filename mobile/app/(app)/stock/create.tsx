@@ -14,6 +14,7 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useCreateStockItem } from '@/services/stock/useStock';
 
 export default function CreateStockScreen() {
   const { user } = useAuth();
@@ -23,7 +24,7 @@ export default function CreateStockScreen() {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [minQuantity, setMinQuantity] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { mutate: createStockItem, isLoading: isSubmitting, error: apiError } = useCreateStockItem();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (user?.role !== 'Admin') {
@@ -63,13 +64,14 @@ export default function CreateStockScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    setIsSubmitting(true);
-    // TODO: POST to API and push to MOCK_STOCK_ITEMS
-    await new Promise((r) => setTimeout(r, 700));
-    setIsSubmitting(false);
-    Alert.alert('Sucesso', 'Item de estoque cadastrado com sucesso!', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    try {
+      await createStockItem({ code, name, quantity, minQuantity });
+      Alert.alert('Sucesso', 'Item de estoque cadastrado com sucesso!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert('Erro', apiError?.message ?? 'Não foi possível cadastrar o item.');
+    }
   };
 
   return (
