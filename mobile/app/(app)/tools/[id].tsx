@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -13,35 +14,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  MockTool,
-  MockToolUsage,
-  formatDate,
-  formatDateTime,
-  getInProgressOrdersForTechnician,
-  getOpenUsagesForTool,
-  getToolById,
-  getUserById,
-  returnTool,
-} from '@/data/mock';
+import { formatDate, formatDateTime } from '@/data/mock';
+import { useOrders } from '@/services/orders/useOrders';
+import { useReturnTool, useTool } from '@/services/tools/useTools';
 
 export default function ToolDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
 
-  const [tool, setTool] = useState<MockTool | undefined>(getToolById(id));
-  const [usages, setUsages] = useState<MockToolUsage[]>(
-    getOpenUsagesForTool(id)
+  const { data: tool, isLoading, error, refetch } = useTool(id);
+  const { mutate: doReturn, isLoading: isReturning } = useReturnTool();
+  const { data: inProgressOrders } = useOrders({
+    status: 'InProgress',
+    technicianId: user?.id,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
   );
 
-  const refresh = useCallback(() => {
-    const fresh = getToolById(id);
-    setTool(fresh ? { ...fresh } : undefined);
-    setUsages(getOpenUsagesForTool(id));
-  }, [id]);
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  if (!tool) {
+  if (error || !tool) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.notFound}>
@@ -55,12 +60,14 @@ export default function ToolDetailScreen() {
 
   const isAdmin = user?.role === 'Admin';
   const isTechnician = user?.role === 'Technician';
-  const hasInProgressOrder =
-    !!user && getInProgressOrdersForTechnician(user.id).length > 0;
-  const canWithdraw =
-    isTechnician && tool.availableQuantity > 0 && hasInProgressOrder;
+  const hasInProgressOrder = (inProgressOrders?.totalCount ?? 0) > 0;
+  const canWithdraw = isTechnician && tool.availableQuantity > 0 && hasInProgressOrder;
 
-  const availabilityRatio = tool.availableQuantity / tool.totalQuantity;
+  const usages = tool.openUsages ?? [];
+
+  const availabilityRatio = tool.totalQuantity > 0
+    ? tool.availableQuantity / tool.totalQuantity
+    : 0;
   const availabilityColor =
     tool.availableQuantity === 0
       ? Colors.error
@@ -72,22 +79,22 @@ export default function ToolDetailScreen() {
     router.push({ pathname: '/(app)/tools/withdraw', params: { toolId: tool.id } });
   };
 
-  const handleReturn = (usage: MockToolUsage) => {
+  const handleReturn = (usageId: string, toolName: string) => {
     Alert.alert(
       'Devolver ferramenta',
-      `Confirmar devolução de "${tool.name}"?`,
+      `Confirmar devolução de "${toolName}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Devolver',
-          onPress: () => {
-            const result = returnTool(usage.id);
-            if ('error' in result) {
-              Alert.alert('Erro', result.error);
-              return;
+          onPress: async () => {
+            try {
+              await doReturn(usageId);
+              refetch();
+              Alert.alert('Sucesso', 'Ferramenta devolvida com sucesso.');
+            } catch {
+              Alert.alert('Erro', 'Não foi possível devolver a ferramenta.');
             }
-            refresh();
-            Alert.alert('Sucesso', 'Ferramenta devolvida com sucesso.');
           },
         },
       ]
@@ -153,14 +160,13 @@ export default function ToolDetailScreen() {
         ) : (
           <View style={styles.usageList}>
             {usages.map((usage) => {
-              const techUser = getUserById(usage.technicianId);
               const isMine = user?.id === usage.technicianId;
               return (
                 <View key={usage.id} style={styles.usageRow}>
                   <View style={styles.usageBody}>
                     <View style={styles.usageHeader}>
                       <Text style={styles.usageTechnician}>
-                        {techUser?.name ?? 'Técnico desconhecido'}
+                        {usage.technicianName ?? 'Técnico desconhecido'}
                       </Text>
                       {isMine && (
                         <View style={styles.mineTag}>
@@ -168,7 +174,7 @@ export default function ToolDetailScreen() {
                         </View>
                       )}
                     </View>
-                    <Text style={styles.usageOrder}>OS: {usage.workOrderId}</Text>
+                    <Text style={styles.usageOrder}>OS: {usage.workOrderId ?? '—'}</Text>
                     <Text style={styles.usageTime}>
                       Retirada em {formatDateTime(usage.withdrawnAt)}
                     </Text>
@@ -176,7 +182,8 @@ export default function ToolDetailScreen() {
                   {isMine && (
                     <TouchableOpacity
                       style={styles.returnBtn}
-                      onPress={() => handleReturn(usage)}
+                      onPress={() => handleReturn(usage.id, tool.name)}
+                      disabled={isReturning}
                       activeOpacity={0.85}
                     >
                       <MaterialIcons name="input" size={16} color={Colors.white} />
@@ -263,6 +270,11 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.white,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     paddingHorizontal: 20,
