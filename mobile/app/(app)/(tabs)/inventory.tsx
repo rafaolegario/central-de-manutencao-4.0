@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -14,13 +15,8 @@ import StockCard from '@/components/StockCard';
 import ToolCard from '@/components/ToolCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  MOCK_STOCK_ITEMS,
-  MOCK_TOOLS,
-  MockStockItem,
-  MockTool,
-  isLowStock,
-} from '@/data/mock';
+import { useStockItems } from '@/services/stock/useStock';
+import { useTools } from '@/services/tools/useTools';
 
 type Segment = 'tools' | 'stock';
 type ToolFilter = 'all' | 'available' | 'inUse' | 'depleted';
@@ -46,12 +42,14 @@ export default function InventoryScreen() {
   const [toolFilter, setToolFilter] = useState<ToolFilter>('all');
   const [stockFilter, setStockFilter] = useState<StockFilter>('all');
 
-  // Force re-render on focus so newly created items / mutations appear.
-  const [, setRefreshTick] = useState(0);
+  const { data: tools, isLoading: isLoadingTools, error: toolsError, refetch: refetchTools } = useTools();
+  const { data: stockItems, isLoading: isLoadingStock, error: stockError, refetch: refetchStock } = useStockItems();
+
   useFocusEffect(
     useCallback(() => {
-      setRefreshTick((n) => n + 1);
-    }, [])
+      refetchTools();
+      refetchStock();
+    }, [refetchTools, refetchStock])
   );
 
   if (user?.role !== 'Admin') {
@@ -68,7 +66,7 @@ export default function InventoryScreen() {
     );
   }
 
-  const filteredTools: MockTool[] = MOCK_TOOLS.filter((t) => {
+  const filteredTools = (tools ?? []).filter((t) => {
     if (toolFilter === 'available') return t.availableQuantity === t.totalQuantity;
     if (toolFilter === 'inUse')
       return t.availableQuantity < t.totalQuantity && t.availableQuantity > 0;
@@ -76,8 +74,8 @@ export default function InventoryScreen() {
     return true;
   });
 
-  const filteredStock: MockStockItem[] = MOCK_STOCK_ITEMS.filter((s) => {
-    if (stockFilter === 'low') return isLowStock(s);
+  const filteredStock = (stockItems ?? []).filter((s) => {
+    if (stockFilter === 'low') return s.isLow;
     return true;
   });
 
@@ -155,57 +153,83 @@ export default function InventoryScreen() {
 
       {/* List */}
       {segment === 'tools' ? (
-        <FlatList
-          key="tools-list"
-          style={styles.list}
-          data={filteredTools}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <ToolCard
-              tool={item}
-              onPress={() =>
-                router.push({
-                  pathname: '/(app)/tools/[id]',
-                  params: { id: item.id },
-                })
-              }
-            />
-          )}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <MaterialIcons name="build" size={64} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>Nenhuma ferramenta encontrada</Text>
-            </View>
-          }
-          showsVerticalScrollIndicator={false}
-        />
+        isLoadingTools ? (
+          <View style={styles.centered}>
+            <ActivityIndicator color={Colors.primary} />
+          </View>
+        ) : toolsError ? (
+          <View style={styles.centered}>
+            <Text style={styles.errorText}>Erro ao carregar ferramentas</Text>
+            <TouchableOpacity onPress={refetchTools}>
+              <Text style={styles.retryText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            key="tools-list"
+            style={styles.list}
+            data={filteredTools}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+              <ToolCard
+                tool={item}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/tools/[id]',
+                    params: { id: item.id },
+                  })
+                }
+              />
+            )}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <MaterialIcons name="build" size={64} color={Colors.textMuted} />
+                <Text style={styles.emptyText}>Nenhuma ferramenta encontrada</Text>
+              </View>
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        )
       ) : (
-        <FlatList
-          key="stock-list"
-          style={styles.list}
-          data={filteredStock}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <StockCard
-              item={item}
-              onPress={() =>
-                router.push({
-                  pathname: '/(app)/stock/[id]',
-                  params: { id: item.id },
-                })
-              }
-            />
-          )}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <MaterialIcons name="inventory" size={64} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>Nenhum item encontrado</Text>
-            </View>
-          }
-          showsVerticalScrollIndicator={false}
-        />
+        isLoadingStock ? (
+          <View style={styles.centered}>
+            <ActivityIndicator color={Colors.primary} />
+          </View>
+        ) : stockError ? (
+          <View style={styles.centered}>
+            <Text style={styles.errorText}>Erro ao carregar estoque</Text>
+            <TouchableOpacity onPress={refetchStock}>
+              <Text style={styles.retryText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            key="stock-list"
+            style={styles.list}
+            data={filteredStock}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+              <StockCard
+                item={item}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/stock/[id]',
+                    params: { id: item.id },
+                  })
+                }
+              />
+            )}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <MaterialIcons name="inventory" size={64} color={Colors.textMuted} />
+                <Text style={styles.emptyText}>Nenhum item encontrado</Text>
+              </View>
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        )
       )}
     </SafeAreaView>
   );
@@ -373,6 +397,21 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  retryText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '600',
   },
   empty: {
     alignItems: 'center',
