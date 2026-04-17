@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { ServiceOrderStatus, STATUS_LABELS } from '@/data/mock';
+import { STATUS_LABELS } from '@/constants/labels';
+import type { ServiceOrderStatus } from '@/types/api';
 
 interface StatusBadgeProps {
   status: ServiceOrderStatus;
