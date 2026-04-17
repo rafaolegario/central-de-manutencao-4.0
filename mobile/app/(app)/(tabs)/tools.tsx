@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -13,11 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ToolCard from '@/components/ToolCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  MOCK_TOOLS,
-  MockTool,
-  getActiveUsagesForTechnician,
-} from '@/data/mock';
+import { useActiveUsages, useTools } from '@/services/tools/useTools';
 
 type ToolFilter = 'all' | 'available' | 'mine';
 
@@ -33,18 +30,25 @@ export default function TechnicianToolsScreen() {
 
   const [selected, setSelected] = useState<ToolFilter>('all');
 
-  const [, setRefreshTick] = useState(0);
+  const { data: tools, isLoading, error, refetch } = useTools();
+  const { data: activeUsagesData, refetch: refetchUsages } = useActiveUsages();
+
   useFocusEffect(
     useCallback(() => {
-      setRefreshTick((n) => n + 1);
-    }, [])
+      refetch();
+      refetchUsages();
+    }, [refetch, refetchUsages])
   );
 
   const mineToolIds = user
-    ? new Set(getActiveUsagesForTechnician(user.id).map((u) => u.toolId))
+    ? new Set(
+        (activeUsagesData?.items ?? [])
+          .filter((u) => u.technicianId === user.id)
+          .map((u) => u.toolId)
+      )
     : new Set<string>();
 
-  const filtered: MockTool[] = MOCK_TOOLS.filter((t) => {
+  const filtered = (tools ?? []).filter((t) => {
     if (selected === 'available') return t.availableQuantity > 0;
     if (selected === 'mine') return mineToolIds.has(t.id);
     return true;
@@ -89,6 +93,16 @@ export default function TechnicianToolsScreen() {
         </ScrollView>
       </View>
 
+      {/* Error banner */}
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>Erro ao carregar ferramentas</Text>
+          <TouchableOpacity onPress={refetch}>
+            <Text style={styles.retryText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* List */}
       <FlatList
         style={styles.list}
@@ -106,11 +120,20 @@ export default function TechnicianToolsScreen() {
             }
           />
         )}
+        ListHeaderComponent={
+          isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color={Colors.primary} />
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <MaterialIcons name="build" size={64} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>Nenhuma ferramenta encontrada</Text>
-          </View>
+          !isLoading ? (
+            <View style={styles.empty}>
+              <MaterialIcons name="build" size={64} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>Nenhuma ferramenta encontrada</Text>
+            </View>
+          ) : null
         }
         showsVerticalScrollIndicator={false}
       />
@@ -180,6 +203,29 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: Colors.white,
     fontWeight: '700',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: Colors.radiusLg,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#991B1B',
+  },
+  retryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+  loadingContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
   },
   list: {
     flex: 1,
