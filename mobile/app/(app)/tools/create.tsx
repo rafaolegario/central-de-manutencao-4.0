@@ -14,6 +14,7 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useCreateTool } from '@/services/tools/useTools';
 
 export default function CreateToolScreen() {
   const { user } = useAuth();
@@ -22,8 +23,9 @@ export default function CreateToolScreen() {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [totalQuantity, setTotalQuantity] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { mutate: createTool, isLoading: isSubmitting, error: apiError } = useCreateTool();
 
   if (user?.role !== 'Admin') {
     return (
@@ -56,13 +58,14 @@ export default function CreateToolScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    setIsSubmitting(true);
-    // TODO: POST to API and push to MOCK_TOOLS
-    await new Promise((r) => setTimeout(r, 700));
-    setIsSubmitting(false);
-    Alert.alert('Sucesso', 'Ferramenta cadastrada com sucesso!', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    try {
+      await createTool({ code: code.trim(), name: name.trim(), totalQuantity });
+      Alert.alert('Sucesso', 'Ferramenta cadastrada com sucesso!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch {
+      // error surfaced via apiError
+    }
   };
 
   return (
@@ -109,6 +112,14 @@ export default function CreateToolScreen() {
             error={errors.totalQuantity}
           />
 
+          {apiError && (
+            <View style={styles.apiErrorBox}>
+              <Text style={styles.apiErrorText}>
+                {apiError.errors?.[0] ?? 'Erro ao cadastrar ferramenta. Tente novamente.'}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.gapLg} />
 
           <AppButton
@@ -141,6 +152,16 @@ const styles = StyleSheet.create({
   },
   gapLg: {
     height: 24,
+  },
+  apiErrorBox: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: Colors.radiusLg,
+  },
+  apiErrorText: {
+    fontSize: 13,
+    color: '#991B1B',
   },
   restricted: {
     flex: 1,
