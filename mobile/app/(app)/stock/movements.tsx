@@ -6,13 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  MockStockMovement,
-  STOCK_MOVEMENT_LABELS,
-  formatDateTime,
-  getMovementsForStockItem,
-  getStockItemById,
-} from '@/data/mock';
+import { STOCK_MOVEMENT_LABELS } from '@/constants/labels';
+import { getMovementsForStockItem, getStockItemById, MockStockMovement } from '@/data/mock';
+import { formatDateTime } from '@/utils/format';
 
 export default function StockMovementsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

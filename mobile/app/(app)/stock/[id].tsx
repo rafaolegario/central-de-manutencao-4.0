@@ -4,14 +4,11 @@ import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
+import MetaRow from '@/components/MetaRow';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  MockStockItem,
-  formatDate,
-  getStockItemById,
-  isLowStock,
-} from '@/data/mock';
+import { getStockItemById, isLowStock, MockStockItem } from '@/data/mock';
+import { formatDate } from '@/utils/format';
 
 export default function StockDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -105,11 +102,11 @@ export default function StockDetailScreen() {
 
         {/* Metadata */}
         <View style={styles.card}>
-          <MetaRow label="Código" value={item.code} />
+          <MetaRow label="Código" value={item.code} labelWidth={130} />
           <View style={styles.cardDivider} />
-          <MetaRow label="Nome" value={item.name} />
+          <MetaRow label="Nome" value={item.name} labelWidth={130} />
           <View style={styles.cardDivider} />
-          <MetaRow label="Cadastrado em" value={formatDate(item.createdAt)} />
+          <MetaRow label="Cadastrado em" value={formatDate(item.createdAt)} labelWidth={130} />
         </View>
 
         {/* Actions */}
@@ -153,32 +150,6 @@ export default function StockDetailScreen() {
   );
 }
 
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={metaStyles.row}>
-      <Text style={metaStyles.label}>{label}</Text>
-      <Text style={metaStyles.value}>{value}</Text>
-    </View>
-  );
-}
-
-const metaStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-  },
-  label: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    width: 130,
-  },
-  value: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    flex: 1,
-    fontWeight: '500',
-  },
-});
 
 const styles = StyleSheet.create({
   safe: {
