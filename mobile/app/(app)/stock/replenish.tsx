@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -15,19 +16,29 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { getStockItemById, replenishStock } from '@/data/mock';
+import { useReplenishStock, useStockItem } from '@/services/stock/useStock';
 
 export default function ReplenishStockScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
 
-  const item = getStockItemById(id);
+  const { data: item, isLoading: isLoadingItem } = useStockItem(id);
+  const { mutate: replenish, isLoading: isSubmitting, error: apiError } = useReplenishStock();
 
   const [quantity, setQuantity] = useState('');
   const [note, setNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  if (isLoadingItem) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.notFound}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (user?.role !== 'Admin') {
     return (
@@ -67,20 +78,14 @@ export default function ReplenishStockScreen() {
     setErrors(e);
     if (Object.keys(e).length > 0) return;
 
-    setIsSubmitting(true);
-    const result = replenishStock({
-      stockItemId: item.id,
-      quantity: qty,
-      note: note.trim() ? note.trim() : undefined,
-    });
-    setIsSubmitting(false);
-    if ('error' in result) {
-      Alert.alert('Erro', result.error);
-      return;
+    try {
+      const updated = await replenish({ id: item.id, data: { quantity, note: note.trim() || undefined } });
+      Alert.alert('Sucesso', `Estoque atualizado para ${updated.quantity} unidades.`, [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert('Erro', apiError?.message ?? 'Não foi possível reabastecer o estoque.');
     }
-    Alert.alert('Sucesso', `Estoque atualizado para ${result.item.quantity} unidades.`, [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
   };
 
   return (
