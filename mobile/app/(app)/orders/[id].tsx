@@ -1,8 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Alert,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,27 +14,46 @@ import AppButton from '@/components/AppButton';
 import PriorityBadge from '@/components/PriorityBadge';
 import StatusBadge from '@/components/StatusBadge';
 import { Colors } from '@/constants/theme';
+import { formatDate, formatDateTime } from '@/data/mock';
 import { useAuth } from '@/context/AuthContext';
-import {
-  formatDate,
-  formatDateTime,
-  getLogsForOrder,
-  getOrderById,
-  getUserById,
-  getTechnicianName,
-  MockServiceOrder,
-  MockServiceOrderLog,
-  STATUS_LABELS,
-} from '@/data/mock';
+import { useOrder, useUpdateOrderStatus } from '@/services/orders/useOrders';
+import { useUsers } from '@/services/users/useUsers';
+import type { ServiceOrderStatus } from '@/types/api';
+
+interface StatusLogEntry {
+  id: string;
+  serviceOrderId: string;
+  oldStatus: ServiceOrderStatus;
+  newStatus: ServiceOrderStatus;
+  changedAt: string;
+  changedBy: string;
+  description: string | null;
+}
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
 
-  const [order, setOrder] = useState<MockServiceOrder | undefined>(getOrderById(id));
+  const { data: order, isLoading, error, refetch } = useOrder(id);
+  const { data: usersData } = useUsers();
+  const { mutate: updateStatus, isLoading: isCanceling } = useUpdateOrderStatus();
 
-  if (!order) {
+  const userMap: Record<string, string> = Object.fromEntries(
+    (usersData ?? []).map((u) => [u.id, u.name])
+  );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !order) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.notFound}>
@@ -45,7 +65,8 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const logs = getLogsForOrder(order.id);
+  const logs: StatusLogEntry[] = [];
+
   const canDelete =
     user?.role === 'Admin' &&
     order.status !== 'Canceled' &&
@@ -60,10 +81,14 @@ export default function OrderDetailScreen() {
         {
           text: 'Sim, cancelar',
           style: 'destructive',
-          onPress: () => {
-            // TODO: PATCH to API and update state
-            setOrder({ ...order, status: 'Canceled' });
-            Alert.alert('Cancelado', 'A ordem foi cancelada.');
+          onPress: async () => {
+            try {
+              await updateStatus({ id: order.id, data: { status: 'Canceled' } });
+              refetch();
+              Alert.alert('Cancelado', 'A ordem foi cancelada.');
+            } catch {
+              Alert.alert('Erro', 'Não foi possível cancelar a ordem.');
+            }
           },
         },
       ]
@@ -103,19 +128,19 @@ export default function OrderDetailScreen() {
           <View style={styles.cardDivider} />
           <MetaRow
             label="Técnico"
-            value={getTechnicianName(order.technicianId)}
+            value={order.technicianId ? (userMap[order.technicianId] ?? '—') : 'Não atribuído'}
           />
           <View style={styles.cardDivider} />
           <MetaRow
             label="Criado por"
-            value={getUserById(order.createdBy)?.name ?? '—'}
+            value={userMap[order.createdBy] ?? '—'}
           />
           {order.assignedBy && (
             <>
               <View style={styles.cardDivider} />
               <MetaRow
                 label="Atribuído por"
-                value={getUserById(order.assignedBy)?.name ?? '—'}
+                value={userMap[order.assignedBy] ?? '—'}
               />
             </>
           )}
@@ -142,7 +167,12 @@ export default function OrderDetailScreen() {
         ) : (
           <View style={styles.timeline}>
             {logs.map((log, index) => (
-              <LogEntry key={log.id} log={log} isLast={index === logs.length - 1} />
+              <LogEntry
+                key={log.id}
+                log={log}
+                changedByName={userMap[log.changedBy] ?? '—'}
+                isLast={index === logs.length - 1}
+              />
             ))}
           </View>
         )}
@@ -165,6 +195,7 @@ export default function OrderDetailScreen() {
                 icon="cancel"
                 variant="danger"
                 onPress={handleCancel}
+                loading={isCanceling}
                 fullWidth
               />
             )}
@@ -204,9 +235,11 @@ const metaStyles = StyleSheet.create({
 
 function LogEntry({
   log,
+  changedByName,
   isLast,
 }: {
-  log: MockServiceOrderLog;
+  log: StatusLogEntry;
+  changedByName: string;
   isLast: boolean;
 }) {
   const dotColor =
@@ -223,7 +256,7 @@ function LogEntry({
           <StatusBadge status={log.newStatus} size="sm" />
         </View>
         <Text style={logStyles.time}>{formatDateTime(log.changedAt)}</Text>
-        <Text style={logStyles.user}>{getUserById(log.changedBy)?.name ?? '—'}</Text>
+        <Text style={logStyles.user}>{changedByName}</Text>
         {log.description && (
           <Text style={logStyles.desc}>{log.description}</Text>
         )}
@@ -285,6 +318,11 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.white,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     paddingHorizontal: 20,
