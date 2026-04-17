@@ -1,13 +1,14 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { STOCK_MOVEMENT_LABELS } from '@/constants/labels';
-import { getMovementsForStockItem, getStockItemById, MockStockMovement } from '@/data/mock';
+import { useStockItem, useStockMovements } from '@/services/stock/useStock';
+import type { StockMovement } from '@/types/api';
 import { formatDateTime } from '@/utils/format';
 
 export default function StockMovementsScreen() {
@@ -30,8 +31,19 @@ export default function StockMovementsScreen() {
     );
   }
 
-  const item = getStockItemById(id);
-  const movements = getMovementsForStockItem(id);
+  const { data: item } = useStockItem(id);
+  const { data: movementsData, isLoading } = useStockMovements(id);
+  const movements = movementsData?.items ?? [];
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.notFound}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!item) {
     return (
@@ -72,7 +84,7 @@ export default function StockMovementsScreen() {
   );
 }
 
-function MovementRow({ movement }: { movement: MockStockMovement }) {
+function MovementRow({ movement }: { movement: StockMovement }) {
   const isIn = movement.type === 'In';
   const icon = isIn ? 'arrow-downward' : 'arrow-upward';
   const color = isIn ? Colors.success : Colors.error;
@@ -86,7 +98,7 @@ function MovementRow({ movement }: { movement: MockStockMovement }) {
       </View>
       <View style={rowStyles.body}>
         <View style={rowStyles.topLine}>
-          <Text style={rowStyles.type}>{STOCK_MOVEMENT_LABELS[movement.type]}</Text>
+          <Text style={rowStyles.type}>{STOCK_MOVEMENT_LABELS[movement.type as keyof typeof STOCK_MOVEMENT_LABELS]}</Text>
           <Text style={[rowStyles.qty, { color }]}>
             {signPrefix}
             {movement.quantity}
