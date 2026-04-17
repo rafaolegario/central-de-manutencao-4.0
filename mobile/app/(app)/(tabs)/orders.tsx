@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -13,12 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ServiceOrderCard from '@/components/ServiceOrderCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  MOCK_SERVICE_ORDERS,
-  MockServiceOrder,
-  ServiceOrderStatus,
-  STATUS_LABELS,
-} from '@/data/mock';
+import { STATUS_LABELS } from '@/data/mock';
+import { useOrders } from '@/services/orders/useOrders';
+import { useUsers } from '@/services/users/useUsers';
+import type { ServiceOrderStatus } from '@/types/api';
 
 type FilterOption = 'all' | ServiceOrderStatus;
 
@@ -40,10 +39,14 @@ export default function OrdersScreen() {
   const router = useRouter();
   const [selected, setSelected] = useState<FilterOption>('all');
 
-  const filtered: MockServiceOrder[] =
-    selected === 'all'
-      ? MOCK_SERVICE_ORDERS
-      : MOCK_SERVICE_ORDERS.filter((o) => o.status === selected);
+  const { data, isLoading, error, refetch } = useOrders({
+    status: selected === 'all' ? undefined : selected,
+  });
+  const { data: usersData } = useUsers();
+
+  const userMap: Record<string, string> = Object.fromEntries(
+    (usersData ?? []).map((u) => [u.id, u.name])
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -52,7 +55,7 @@ export default function OrdersScreen() {
         <View style={styles.headerLeft}>
           <Text style={styles.title}>Ordens de Serviço</Text>
           <View style={styles.countBadge}>
-            <Text style={styles.countText}>{filtered.length}</Text>
+            <Text style={styles.countText}>{data?.totalCount ?? 0}</Text>
           </View>
         </View>
         {user?.role === 'Admin' && (
@@ -90,25 +93,45 @@ export default function OrdersScreen() {
         </ScrollView>
       </View>
 
+      {/* Error banner */}
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>Erro ao carregar ordens</Text>
+          <TouchableOpacity onPress={refetch}>
+            <Text style={styles.retryText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* List */}
       <FlatList
         style={styles.list}
-        data={filtered}
+        data={data?.items ?? []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <ServiceOrderCard
             order={item}
+            technicianName={item.technicianId ? (userMap[item.technicianId] ?? 'Não atribuído') : 'Não atribuído'}
             onPress={() =>
               router.push({ pathname: '/(app)/orders/[id]', params: { id: item.id } })
             }
           />
         )}
+        ListHeaderComponent={
+          isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color={Colors.primary} />
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <MaterialIcons name="inbox" size={64} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>Nenhuma ordem encontrada</Text>
-          </View>
+          !isLoading ? (
+            <View style={styles.empty}>
+              <MaterialIcons name="inbox" size={64} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>Nenhuma ordem encontrada</Text>
+            </View>
+          ) : null
         }
         showsVerticalScrollIndicator={false}
       />
@@ -186,6 +209,29 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: Colors.white,
     fontWeight: '700',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: Colors.radiusLg,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#991B1B',
+  },
+  retryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+  loadingContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
   },
   list: {
     flex: 1,
