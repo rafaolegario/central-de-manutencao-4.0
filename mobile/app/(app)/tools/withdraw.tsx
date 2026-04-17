@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -13,23 +14,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  getInProgressOrdersForTechnician,
-  getToolById,
-  withdrawTool,
-} from '@/data/mock';
+import { useOrders } from '@/services/orders/useOrders';
+import { useTool, useWithdrawTool } from '@/services/tools/useTools';
 
 export default function WithdrawToolScreen() {
   const { toolId } = useLocalSearchParams<{ toolId: string }>();
   const router = useRouter();
   const { user } = useAuth();
 
-  const tool = getToolById(toolId);
-  const orders = user ? getInProgressOrdersForTechnician(user.id) : [];
+  const { data: tool, isLoading: isLoadingTool } = useTool(toolId);
+  const { data: ordersData, isLoading: isLoadingOrders } = useOrders({
+    status: 'InProgress',
+    technicianId: user?.id,
+  });
+  const { mutate: doWithdraw, isLoading: isWithdrawing } = useWithdrawTool();
 
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(
-    orders[0]?.id ?? null
-  );
+  const orders = ordersData?.items ?? [];
+
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   if (user?.role !== 'Technician') {
     return (
@@ -41,6 +43,16 @@ export default function WithdrawToolScreen() {
             Apenas técnicos podem retirar ferramentas.
           </Text>
           <AppButton label="Voltar" onPress={() => router.back()} variant="ghost" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isLoadingTool || isLoadingOrders) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -58,23 +70,21 @@ export default function WithdrawToolScreen() {
     );
   }
 
-  const handleConfirm = () => {
-    if (!selectedOrderId) {
+  const effectiveOrderId = selectedOrderId ?? orders[0]?.id ?? null;
+
+  const handleConfirm = async () => {
+    if (!effectiveOrderId) {
       Alert.alert('Selecione uma ordem', 'Escolha uma ordem de serviço em andamento.');
       return;
     }
-    const result = withdrawTool({
-      toolId: tool.id,
-      technicianId: user.id,
-      workOrderId: selectedOrderId,
-    });
-    if ('error' in result) {
-      Alert.alert('Erro', result.error);
-      return;
+    try {
+      await doWithdraw({ toolId: tool.id, workOrderId: effectiveOrderId });
+      Alert.alert('Sucesso', 'Ferramenta retirada com sucesso.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível retirar a ferramenta.');
     }
-    Alert.alert('Sucesso', 'Ferramenta retirada com sucesso.', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
   };
 
   return (
@@ -112,21 +122,21 @@ export default function WithdrawToolScreen() {
         ) : (
           <View style={styles.orderList}>
             {orders.map((order) => {
-              const selected = order.id === selectedOrderId;
+              const isSelected = (effectiveOrderId) === order.id;
               return (
                 <TouchableOpacity
                   key={order.id}
-                  style={[styles.orderCard, selected && styles.orderCardSelected]}
+                  style={[styles.orderCard, isSelected && styles.orderCardSelected]}
                   onPress={() => setSelectedOrderId(order.id)}
                   activeOpacity={0.85}
                 >
                   <View
                     style={[
                       styles.radio,
-                      selected && styles.radioSelected,
+                      isSelected && styles.radioSelected,
                     ]}
                   >
-                    {selected && <View style={styles.radioInner} />}
+                    {isSelected && <View style={styles.radioInner} />}
                   </View>
                   <View style={styles.orderBody}>
                     <Text style={styles.orderId}>{order.id}</Text>
@@ -156,6 +166,7 @@ export default function WithdrawToolScreen() {
           label="Confirmar Retirada"
           icon="output"
           onPress={handleConfirm}
+          loading={isWithdrawing}
           fullWidth
           size="lg"
           disabled={orders.length === 0 || tool.availableQuantity === 0}
@@ -169,6 +180,11 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.white,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     padding: 20,
