@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -13,7 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import UserCard from '@/components/UserCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { MockUser, MOCK_USERS } from '@/data/mock';
+import { useUsers } from '@/services/users/useUsers';
+import type { User } from '@/types/api';
 
 type FilterOption = 'all' | 'Admin' | 'Technician' | 'active' | 'inactive';
 
@@ -30,7 +32,15 @@ export default function UsersScreen() {
   const router = useRouter();
   const [selected, setSelected] = useState<FilterOption>('all');
 
-  const filtered: MockUser[] = MOCK_USERS.filter((u) => {
+  const { data: users, isLoading, error, refetch } = useUsers();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
+  const filtered = (users ?? []).filter((u) => {
     if (selected === 'all') return true;
     if (selected === 'Admin') return u.role === 'Admin';
     if (selected === 'Technician') return u.role === 'Technician';
@@ -39,9 +49,9 @@ export default function UsersScreen() {
     return true;
   });
 
-  const activeCount = MOCK_USERS.filter((u) => u.active).length;
+  const activeCount = (users ?? []).filter((u) => u.active).length;
 
-  const canTap = (u: MockUser): boolean => {
+  const canTap = (u: User): boolean => {
     if (currentUser?.role === 'Admin') return true;
     return u.id === currentUser?.id;
   };
@@ -92,28 +102,41 @@ export default function UsersScreen() {
       </View>
 
       {/* List */}
-      <FlatList
-        style={styles.list}
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <UserCard
-            user={item}
-            disabled={!canTap(item)}
-            onPress={() =>
-              router.push({ pathname: '/(app)/users/[id]', params: { id: item.id } })
-            }
-          />
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <MaterialIcons name="people-outline" size={64} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>Nenhum usuário encontrado</Text>
-          </View>
-        }
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>Erro ao carregar usuários</Text>
+          <TouchableOpacity onPress={refetch}>
+            <Text style={styles.retryText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          style={styles.list}
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <UserCard
+              user={item}
+              disabled={!canTap(item)}
+              onPress={() =>
+                router.push({ pathname: '/(app)/users/[id]', params: { id: item.id } })
+              }
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <MaterialIcons name="people-outline" size={64} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>Nenhum usuário encontrado</Text>
+            </View>
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -195,6 +218,21 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  retryText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '600',
   },
   empty: {
     alignItems: 'center',
