@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -13,15 +14,25 @@ import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { ROLE_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
-import { getUserById, MOCK_SERVICE_ORDERS, MockUser } from '@/data/mock';
-import { formatDate, getInitials } from '@/utils/format';
+import { useOrders } from '@/services/orders/useOrders';
+import { useToggleUserActive, useUser } from '@/services/users/useUsers';
+import type { UserRole, UserSpecialty } from '@/types/api';
+import { getInitials } from '@/utils/format';
 
 export default function UserDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user: currentUser } = useAuth();
 
-  const [targetUser, setTargetUser] = useState<MockUser | undefined>(getUserById(id));
+  const { data: targetUser, isLoading, error, refetch } = useUser(id);
+  const { data: ordersData } = useOrders({ technicianId: id });
+  const { mutate: toggleActive, isLoading: isToggling } = useToggleUserActive();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const canView =
     currentUser?.role === 'Admin' || currentUser?.id === id;
@@ -41,7 +52,17 @@ export default function UserDetailScreen() {
     );
   }
 
-  if (!targetUser) {
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <View style={styles.centered}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !targetUser) {
     return (
       <SafeAreaView style={styles.safe} edges={['bottom']}>
         <View style={styles.centered}>
@@ -54,9 +75,7 @@ export default function UserDetailScreen() {
   }
 
   const initials = getInitials(targetUser.name);
-  const assignedOrders = MOCK_SERVICE_ORDERS.filter(
-    (o) => o.technicianId === targetUser.id
-  );
+  const assignedOrders = ordersData?.items ?? [];
 
   const handleToggleActive = () => {
     const action = targetUser.active ? 'desativar' : 'ativar';
@@ -67,13 +86,17 @@ export default function UserDetailScreen() {
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Confirmar',
-          onPress: () => {
-            // TODO: PATCH to API
-            setTargetUser({ ...targetUser, active: !targetUser.active });
-            Alert.alert(
-              'Atualizado',
-              `Usuário ${targetUser.active ? 'desativado' : 'ativado'} com sucesso.`
-            );
+          onPress: async () => {
+            try {
+              await toggleActive({ id: targetUser.id, active: !targetUser.active });
+              refetch();
+              Alert.alert(
+                'Atualizado',
+                `Usuário ${targetUser.active ? 'desativado' : 'ativado'} com sucesso.`
+              );
+            } catch {
+              Alert.alert('Erro', 'Não foi possível atualizar o usuário.');
+            }
           },
         },
       ]
@@ -95,12 +118,12 @@ export default function UserDetailScreen() {
 
           <View style={styles.badgeRow}>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleBadgeText}>{ROLE_LABELS[targetUser.role]}</Text>
+              <Text style={styles.roleBadgeText}>{ROLE_LABELS[targetUser.role as UserRole]}</Text>
             </View>
-            {targetUser.specialty !== 'General' && (
+            {targetUser.specialty && targetUser.specialty !== 'General' && (
               <View style={styles.specialtyBadge}>
                 <Text style={styles.specialtyBadgeText}>
-                  {SPECIALTY_LABELS[targetUser.specialty]}
+                  {SPECIALTY_LABELS[targetUser.specialty as UserSpecialty]}
                 </Text>
               </View>
             )}
@@ -133,8 +156,6 @@ export default function UserDetailScreen() {
           <InfoRow icon="email" label="E-mail" value={targetUser.email} />
           <View style={styles.divider} />
           <InfoRow icon="badge" label="ID" value={targetUser.id} mono />
-          <View style={styles.divider} />
-          <InfoRow label="Criado em" icon="calendar-today" value={formatDate(targetUser.createdAt)} />
         </View>
 
         {/* Orders summary */}
@@ -171,6 +192,7 @@ export default function UserDetailScreen() {
               icon={targetUser.active ? 'person-off' : 'person'}
               variant={targetUser.active ? 'danger' : 'primary'}
               onPress={handleToggleActive}
+              loading={isToggling}
               fullWidth
             />
           </View>
