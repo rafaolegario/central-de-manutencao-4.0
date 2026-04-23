@@ -16,6 +16,7 @@ import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { SPECIALTY_LABELS } from '@/constants/labels';
+import { useCreateUser } from '@/services/users/useUsers';
 import type { UserSpecialty } from '@/types/api';
 
 const SPECIALTIES: UserSpecialty[] = [
@@ -34,7 +35,7 @@ export default function CreateUserScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [specialty, setSpecialty] = useState<UserSpecialty>('General');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { mutate: createUser, isLoading: isSubmitting, error: apiError } = useCreateUser();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (user?.role !== 'Admin') {
@@ -65,13 +66,14 @@ export default function CreateUserScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    setIsSubmitting(true);
-    // TODO: POST to API and update local state
-    await new Promise((r) => setTimeout(r, 700));
-    setIsSubmitting(false);
-    Alert.alert('Sucesso', 'Usuário criado com sucesso!', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    try {
+      await createUser({ name, email, password, specialty });
+      Alert.alert('Sucesso', 'Usuário criado com sucesso!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch {
+      Alert.alert('Erro', apiError?.message ?? 'Não foi possível criar o usuário.');
+    }
   };
 
   return (
