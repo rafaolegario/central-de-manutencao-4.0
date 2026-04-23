@@ -3,10 +3,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { ROLE_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
 import { getInitials } from '@/utils/format';
-import { MockUser } from '@/data/mock';
+import type { User, UserRole, UserSpecialty } from '@/types/api';
 
 interface UserCardProps {
-  user: MockUser;
+  user: User;
   onPress: () => void;
   disabled?: boolean;
 }
@@ -45,12 +45,12 @@ export default function UserCard({ user, onPress, disabled = false }: UserCardPr
 
         <View style={styles.badgeRow}>
           <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{ROLE_LABELS[user.role]}</Text>
+            <Text style={styles.roleBadgeText}>{ROLE_LABELS[user.role as UserRole]}</Text>
           </View>
-          {user.specialty !== 'General' && (
+          {user.specialty && user.specialty !== 'General' && (
             <View style={styles.specialtyBadge}>
               <Text style={styles.specialtyBadgeText}>
-                {SPECIALTY_LABELS[user.specialty]}
+                {SPECIALTY_LABELS[user.specialty as UserSpecialty]}
               </Text>
             </View>
           )}
