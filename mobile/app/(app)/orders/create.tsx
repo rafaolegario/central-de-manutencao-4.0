@@ -21,10 +21,34 @@ import type { ServiceOrderPriority } from '@/types/api';
 
 const PRIORITIES: ServiceOrderPriority[] = ['Low', 'Medium', 'High', 'Critical'];
 
+// Masks free input into DD/MM/AAAA, inserting the slashes automatically
+// as the user types and discarding any non-digit characters.
+function maskDate(value: string): string {
+  const d = value.replace(/\D/g, '').slice(0, 8);
+  if (d.length > 4) return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+  if (d.length > 2) return `${d.slice(0, 2)}/${d.slice(2)}`;
+  return d;
+}
+
+// Parses a complete DD/MM/AAAA string into an ISO date (YYYY-MM-DD),
+// returning undefined when the value is not a real calendar date.
 function parseDueDate(input: string): string | undefined {
-  const [day, month, year] = input.split('/');
-  if (!day || !month || !year || year.length !== 4) return undefined;
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  const m = input.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return undefined;
+  const [, dd, mm, yyyy] = m;
+  const day = Number(dd);
+  const month = Number(mm);
+  const year = Number(yyyy);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return undefined;
+  }
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export default function CreateOrderScreen() {
@@ -59,6 +83,7 @@ export default function CreateOrderScreen() {
     const e: Record<string, string> = {};
     if (!title.trim()) e.title = 'Título é obrigatório.';
     if (!description.trim()) e.description = 'Descrição é obrigatória.';
+    if (dueDate && !parseDueDate(dueDate)) e.dueDate = 'Data inválida. Use DD/MM/AAAA.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -130,10 +155,12 @@ export default function CreateOrderScreen() {
           <AppInput
             label="Prazo"
             value={dueDate}
-            onChangeText={setDueDate}
+            onChangeText={(t) => setDueDate(maskDate(t))}
             placeholder="DD/MM/AAAA"
             leftIcon="event"
-            keyboardType="numeric"
+            keyboardType="number-pad"
+            maxLength={10}
+            error={errors.dueDate}
           />
 
           <View style={styles.gap} />
