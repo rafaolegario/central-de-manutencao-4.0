@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
@@ -22,13 +22,6 @@ export default function ProfileScreen() {
   const ordersAssigned = MOCK_SERVICE_ORDERS.filter(
     (o) => o.technicianId === user.id
   ).length;
-
-  const handleLogout = () => {
-    Alert.alert('Sair da conta', 'Tem certeza que deseja sair?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: logout },
-    ]);
-  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -87,7 +80,7 @@ export default function ProfileScreen() {
         <AppButton
           label="Sair da Conta"
           icon="logout"
-          onPress={handleLogout}
+          onPress={logout}
           variant="danger"
           fullWidth
         />
