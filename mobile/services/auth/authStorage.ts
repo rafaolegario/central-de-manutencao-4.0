@@ -27,5 +27,8 @@ export async function getUser(): Promise<AuthUserResponse | null> {
 }
 
 export async function clearAll(): Promise<void> {
-  await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+  await Promise.all([
+    AsyncStorage.removeItem(TOKEN_KEY),
+    AsyncStorage.removeItem(USER_KEY),
+  ]);
 }
