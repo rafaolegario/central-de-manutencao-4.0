@@ -24,9 +24,6 @@ namespace central_de_manutencao.Api.Database
 
             modelBuilder.Entity<ServiceOrder>(entity =>
             {
-                entity.Property(e => e.RowVersion)
-                    .IsRowVersion();
-
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.CreatedAt);
                 entity.HasIndex(e => e.TechnicianId);
