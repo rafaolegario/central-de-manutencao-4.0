@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using central_de_manutencao.Api.Enums;
 
 namespace central_de_manutencao.Api.Models.ServiceOrders
@@ -23,8 +22,5 @@ namespace central_de_manutencao.Api.Models.ServiceOrders
         public Guid? AssignedBy { get; set; }
         public bool IsDeleted { get; set; }
         public string? CompletionNotes { get; set; }
-
-        [Timestamp]
-        public byte[] RowVersion { get; set; } = null!;
     }
 }
