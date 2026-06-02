@@ -63,6 +63,22 @@ export default function AppLayout() {
         name="stock/movements"
         options={{ headerShown: true, title: 'Movimentações' }}
       />
+      <Stack.Screen
+        name="onboarding/admin/add-tool"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="onboarding/admin/add-stock"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="onboarding/admin/invite-technician"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="onboarding/admin/completed"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }
