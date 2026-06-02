@@ -15,33 +15,148 @@ Mark each item `[x]` as you test. Note any bug or improvement inline with `> ⚠
   - **Technician** — can log in with technician credentials
 - [ ] At least one service order in `InProgress` status assigned to the Technician (required for tool withdrawal)
 
+> ⚠️ Some sections (1.4, 1.5, 1A) require running against a **fresh database** to exercise first-time flows. To reset: stop the API, run `docker compose down -v` (or drop/recreate the Postgres volume), then restart — `dotnet run` will re-apply migrations and the seed admin.
+
 ### Test credentials
 | Role | Email | Password |
 |---|---|---|
-| Admin | _(fill in)_ | _(fill in)_ |
-| Technician | _(fill in)_ | _(fill in)_ |
+| Admin (seeded) | _(fill in, from `AdminUser:Email`)_ | _(fill in, from `AdminUser:Password`)_ |
+| Admin (self-registered) | _(fill in after running section 1.4)_ | _(fill in)_ |
+| Technician (invited, password set) | _(fill in after running section 1.5)_ | _(fill in)_ |
+| Technician (invited, password NOT yet set) | _(fill in for testing 1.5)_ | _(none — must use first-access flow)_ |
 
 ---
 
 ## 1. Authentication
 
-### 1.1 Login
-- [ ] Open app cold — redirected to login screen
-- [ ] Submit with empty email → validation error
-- [ ] Submit with empty password → validation error
-- [ ] Submit with wrong credentials → API error message shown
-- [ ] Login as **Admin** → lands on Dashboard
-- [ ] Login as **Technician** → lands on Dashboard
+### 1.1 Login — Two-Step (Email → Password)
+**Step 1 — Email**
+- [ ] Open app cold — redirected to login screen with only the e-mail field visible (no password field)
+- [ ] Title reads "Entre com seu e-mail para continuar"
+- [ ] Submit button label is "Continuar" (NOT "Entrar")
+- [ ] Submit with empty email → inline error "Informe o e-mail."
+- [ ] Submit with an existing **Admin** email → form transitions to step 2 (password revealed, "Trocar e-mail" link appears)
+- [ ] Submit with an existing **Technician** email (password already set) → form transitions to step 2
+- [ ] Submit with an unknown email when admins exist → inline error "E-mail não encontrado. Verifique com o administrador."
+
+**Step 2 — Password**
+- [ ] Subtitle reads "Olá! Informe a senha de {email}"
+- [ ] "Trocar e-mail" link at top — tapping returns to step 1, clears password and error
+- [ ] Password field autofocuses
+- [ ] Submit with empty password → inline error "Informe a senha."
+- [ ] Submit with wrong password → API error message shown ("Usuário ou senha incorretos.")
+- [ ] Submit with correct credentials as **Admin** → lands on Dashboard (or onboarding — see Section 1A)
+- [ ] Submit with correct credentials as **Technician** → lands on Dashboard
+- [ ] Password show/hide eye icon works
 
 ### 1.2 Session Persistence
 - [ ] Login as Admin → close app entirely → reopen → already logged in (no login screen)
 - [ ] Token auto-refresh: leave app idle, reopen → still authenticated
 
 ### 1.3 Logout
-- [ ] Profile tab → tap "Sair da Conta" → confirmation alert appears
-- [ ] Tap "Cancelar" → stays on Profile, still logged in
-- [ ] Tap "Sair" → redirected to login screen
+- [ ] Profile tab → tap "Sair da Conta" → user is logged out immediately and redirected to login (no confirmation dialog — this was removed)
 - [ ] After logout, go back (hardware back) → cannot access protected routes
+- [ ] After logout, the "Onboarding dismissed" flag is cleared (verifiable by repeating section 1A with the same admin on the same device)
+
+### 1.4 First Admin Self-Register (fresh DB only)
+> Requires: empty Users table (or no `Admin` role users in DB). See Setup note.
+
+- [ ] Open app cold → login screen
+- [ ] On mount, the login screen shows the link "**Primeira configuração? Criar conta de administrador**" below the "Continuar" button
+- [ ] Enter any new email (e.g. `admin@example.com`) → tap "Continuar"
+- [ ] App navigates to `/(auth)/register` with the email pre-filled
+- [ ] Register screen header: "Configuração inicial"
+- [ ] Info banner: "Este passo só está disponível quando ainda não existe nenhum administrador cadastrado."
+- [ ] "Voltar" button returns to login screen
+- [ ] Submit with empty name → "Informe seu nome."
+- [ ] Submit with invalid email (no `@`) → "Informe um e-mail válido."
+- [ ] Submit with password < 6 chars → "A senha deve ter no mínimo 6 caracteres."
+- [ ] Submit with mismatched confirm → "As senhas não coincidem."
+- [ ] Submit with all valid fields → admin is created, app auto-logs in, and routes to **Admin Onboarding Wizard step 1** (see Section 1A)
+- [ ] After the first admin exists, attempting to register again (e.g., via direct route navigation to `/(auth)/register`) and submitting → API returns "Já existe um administrador cadastrado. Use o login normal." and shows it as an inline error
+- [ ] After the first admin exists, the "Primeira configuração?" link **disappears** from the login screen
+
+### 1.5 Technician First-Access (Set Password)
+> Requires: a technician created by an admin (via section 6.4) who has not yet set a password.
+
+- [ ] As Admin, create a technician (e.g., `tech-new@example.com`) — no password field on the form (covered in 6.4)
+- [ ] Log out
+- [ ] On login screen, enter the technician's email → tap "Continuar"
+- [ ] App navigates to `/(auth)/set-password?email=tech-new@example.com`
+- [ ] Header: "Bem-vindo!", subtitle includes the email
+- [ ] "Voltar" button returns to login
+- [ ] Submit with password < 6 chars → "A senha deve ter no mínimo 6 caracteres."
+- [ ] Submit with mismatched confirm → "As senhas não coincidem."
+- [ ] Submit valid password → user is auto-logged in, lands on technician Dashboard
+- [ ] Repeat: log out, enter the same technician email → app routes to **step 2 (password)** directly, NOT to set-password (because `MustSetPassword` is now `false`)
+- [ ] Attempting to use the seeded Admin credentials via the legacy `/api/Authenticate/login` route works normally (no `MustSetPassword` block — the seeded admin had it set to `false` during the migration)
+
+### 1.6 Email-First Edge Cases
+- [ ] Submit step-1 with email that has trailing whitespace or uppercase characters → server normalises (lowercased + trimmed); flow proceeds correctly
+- [ ] Kill backend → enter email → tap "Continuar" → "Erro de conexão. Tente novamente." (or similar)
+- [ ] On a fresh DB: enter any email → routed to register (not to "user not found" error), because `anyAdminExists` is `false`
+
+---
+
+## 1A. Admin Onboarding Wizard
+
+Triggers automatically when an Admin is authenticated and `GET /api/Onboarding/status` returns `complete: false` (i.e. at least one of tools, stock items, or technicians is empty) AND the `@onboarding_dismissed` local flag is not set.
+
+### 1A.1 Gate (entry behaviour)
+- [ ] Fresh DB + brand-new admin (via 1.4) → after register, app routes directly to `/(app)/onboarding/admin/add-tool`, NOT to `/(app)/(tabs)`
+- [ ] If only tools exist (no stock, no technicians) → gate routes to **add-stock** (skips add-tool)
+- [ ] If only tools + stock exist (no technicians) → gate routes to **invite-technician**
+- [ ] If all three exist → no redirect; admin lands on Dashboard normally
+- [ ] As a **Technician** (any state), no onboarding gate fires — Tabs render immediately
+- [ ] Gate shows a centered spinner while `GET /api/Onboarding/status` is loading
+
+### 1A.2 Step 1 — Cadastre sua primeira ferramenta
+- [ ] Step label "PASSO 1 DE 3"
+- [ ] Title "Cadastre sua primeira ferramenta"
+- [ ] Subtitle explains what tools are
+- [ ] Fields: Código, Nome, Quantidade total (same validation as `/tools/create`)
+- [ ] Submit empty → field-level errors on all 3
+- [ ] Submit quantity 0 → "Deve ser um número inteiro positivo."
+- [ ] "Cadastrar e continuar" with valid data → tool is created (verifiable in DB / Tools tab later) → navigates to `add-stock`
+- [ ] "Pular esta etapa" (ghost button) → navigates to `add-stock` WITHOUT creating a tool
+- [ ] API error (e.g. duplicate code) surfaces in red error box below the form
+
+### 1A.3 Step 2 — Cadastre seu primeiro item de estoque
+- [ ] Step label "PASSO 2 DE 3"
+- [ ] Title "Cadastre seu primeiro item de estoque"
+- [ ] Fields: Código, Nome, Quantidade inicial, Quantidade mínima (same validation as `/stock/create`)
+- [ ] Submit empty → 4 field errors
+- [ ] Submit valid → item created → navigates to `invite-technician`
+- [ ] "Pular esta etapa" → skips to `invite-technician`
+
+### 1A.4 Step 3 — Convide seu primeiro técnico
+- [ ] Step label "PASSO 3 DE 3"
+- [ ] Title "Convide seu primeiro técnico"
+- [ ] Subtitle clarifies the tech will set their own password
+- [ ] Fields: Nome, E-mail, Especialidade chips — **NO password field**
+- [ ] Submit empty → field errors on Nome and E-mail
+- [ ] Submit invalid email → "E-mail inválido."
+- [ ] "Convidar e finalizar" with valid data → user created → navigates to `completed`
+- [ ] The created tech has `MustSetPassword = true` in DB (verify by attempting normal login → "Usuário deve definir uma senha…")
+- [ ] "Pular esta etapa" → skips to `completed`
+
+### 1A.5 Step 4 — Tudo pronto! (Celebration)
+- [ ] Large green/orange check icon
+- [ ] Title "Tudo pronto!"
+- [ ] Sets `@onboarding_dismissed = 'true'` in AsyncStorage on mount
+- [ ] Auto-redirects to `/(app)/(tabs)` after ~2.5 seconds
+- [ ] "Ir para o painel" button immediately redirects
+- [ ] After landing on tabs, opening the app again does NOT route back into the wizard (the dismissed flag holds)
+
+### 1A.6 Skip-Through Loop (re-trap prevention)
+- [ ] Fresh DB, register admin, skip ALL three steps → land on completed → tabs
+- [ ] Close and reopen app (still authenticated) → no wizard, lands on tabs (because `@onboarding_dismissed` is set)
+- [ ] Log out → `@onboarding_dismissed` is cleared
+- [ ] Log back in as the same admin → wizard fires again (because status is still incomplete and the flag was cleared). This is the documented behaviour — see plan file Verification §6.
+
+### 1A.7 Completion Path (non-skip)
+- [ ] Fresh DB, register admin, fill EACH step → status reaches `complete: true`
+- [ ] Subsequent logins skip onboarding entirely (status.complete = true short-circuits the gate)
 
 ---
 
@@ -278,20 +393,20 @@ Mark each item `[x]` as you test. Note any bug or improvement inline with `> ⚠
 - [ ] Deactivated user still visible in Users list with "Inativo" badge
 - [ ] "Inativos" filter in list shows deactivated user
 
-### 6.4 Create User (Admin only)
+### 6.4 Create User (Admin only) — Invite-only flow
 - [ ] As Technician → "Acesso Restrito"
 - [ ] Role info chip shows "Função: Técnico" (new users always created as Technician)
-- [ ] Fields: Nome Completo, E-mail, Senha, Especialidade chips
-- [ ] Password field: show/hide toggle works
+- [ ] Fields: Nome Completo, E-mail, Especialidade chips — **NO password field**
+- [ ] Below the e-mail field, an invite banner reads: "O técnico receberá um convite e definirá a senha no primeiro acesso."
 - [ ] Specialty chips: Eletricista, Mecânico, Eletromecânico, Geral — one selectable at a time
-- [ ] Submit with empty name → error
-- [ ] Submit with empty email → error
-- [ ] Submit with invalid email (no @) → error
-- [ ] Submit with short password (< 6 chars) → error
-- [ ] Valid form → loading → success alert → back
-- [ ] New user appears in Users list
-- [ ] New user can log in with created credentials
-- [ ] API error → alert with message
+- [ ] Submit with empty name → error "Nome é obrigatório."
+- [ ] Submit with empty email → error "E-mail é obrigatório."
+- [ ] Submit with invalid email (no @) → error "E-mail inválido."
+- [ ] Valid form → loading → success alert "Convite enviado" / "O técnico definirá a senha no primeiro acesso usando este e-mail." → back
+- [ ] New user appears in Users list with `Inativo`-ish state? — In DB the user has `Active = true` and `MustSetPassword = true`. (The Users list currently doesn't surface MustSetPassword; this is fine.)
+- [ ] New user CANNOT log in via the legacy email+password path (server returns "Usuário deve definir uma senha…")
+- [ ] New user CAN complete first-access via section 1.5 → afterwards logs in normally
+- [ ] API error (e.g. duplicate email) → alert with message "Já existe um usuário com este email."
 
 ### 6.5 Edit User (Admin only)
 - [ ] "Editar Usuário" button visible for Admin
@@ -342,9 +457,11 @@ These test flows that span multiple features.
 - [ ] Admin replenishes a low-stock item
 - [ ] Dashboard "Itens em baixa" count decreases if item was the only low one
 
-### 9.2 User lifecycle
-- [ ] Admin creates a new Technician user
+### 9.2 User lifecycle (with first-access)
+- [ ] Admin creates a new Technician user (no password field — see 6.4)
 - [ ] New user appears in Users list
+- [ ] Log out, log back in on the tech's email → routed to set-password (see 1.5)
+- [ ] After tech sets password, they can log in normally on subsequent attempts
 - [ ] Admin deactivates the user
 - [ ] Deactivated user shows "Inativo" in list
 - [ ] Admin reactivates the user
