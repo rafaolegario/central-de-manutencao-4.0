@@ -8,6 +8,7 @@ namespace central_de_manutencao.Api.Models.Users
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public bool MustSetPassword { get; set; } = true;
         public Roles Role { get; set; }
         public Specialties? Specialty { get; set; }
         public bool Active { get; set; }
