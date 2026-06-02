@@ -55,6 +55,34 @@ export interface RefreshTokenResponse {
   expiresIn: number;
 }
 
+export interface CheckEmailRequest {
+  email: string;
+}
+
+export interface CheckEmailResponse {
+  exists: boolean;
+  mustSetPassword: boolean;
+  anyAdminExists: boolean;
+}
+
+export interface SetFirstPasswordRequest {
+  email: string;
+  newPassword: string;
+}
+
+export interface RegisterFirstAdminRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface OnboardingStatus {
+  hasTools: boolean;
+  hasStockItems: boolean;
+  hasTechnicians: boolean;
+  complete: boolean;
+}
+
 // ─── Service Orders ─────────────────────────────────────────────────────────
 
 export interface ServiceOrder {
@@ -217,7 +245,6 @@ export interface CreateUserRequest {
   name: string;
   email: string;
   specialty?: string;
-  password: string;
 }
 
 export interface CreateUserResponse {
