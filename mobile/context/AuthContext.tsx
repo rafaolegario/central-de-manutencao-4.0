@@ -11,7 +11,14 @@ import {
   setOnUnauthorized,
 } from '@/services/api/client';
 import { ApiError } from '@/services/api/errors';
-import { loginApi, logoutApi, refreshTokenApi } from '@/services/auth/authService';
+import {
+  checkEmailApi,
+  loginApi,
+  logoutApi,
+  refreshTokenApi,
+  registerFirstAdminApi,
+  setFirstPasswordApi,
+} from '@/services/auth/authService';
 import {
   clearAll,
   getToken,
@@ -19,7 +26,13 @@ import {
   saveToken,
   saveUser,
 } from '@/services/auth/authStorage';
-import type { UserRole, UserSpecialty } from '@/types/api';
+import { clearOnboardingDismissed } from '@/services/onboarding/onboardingStorage';
+import type {
+  AuthResponse,
+  CheckEmailResponse,
+  UserRole,
+  UserSpecialty,
+} from '@/types/api';
 
 function capitalizeFirst(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
@@ -33,11 +46,27 @@ export interface AuthUser {
   email: string;
 }
 
+export interface RegisterFirstAdminInput {
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface AuthActionResult {
+  success: boolean;
+  error?: string;
+}
+
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<AuthActionResult>;
+  checkEmail: (
+    email: string,
+  ) => Promise<{ success: boolean; data?: CheckEmailResponse; error?: string }>;
+  setFirstPassword: (email: string, newPassword: string) => Promise<AuthActionResult>;
+  registerFirstAdmin: (input: RegisterFirstAdminInput) => Promise<AuthActionResult>;
   logout: () => Promise<void>;
 }
 
@@ -54,8 +83,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
       // Best-effort: ignore logout API errors
     }
     clearAccessToken();
-    await clearAll();
+    await Promise.all([clearAll(), clearOnboardingDismissed()]);
     setUser(null);
+  };
+
+  const persistAuthResponse = async (response: AuthResponse, email: string) => {
+    setAccessToken(response.token);
+    await saveToken(response.token);
+    await saveUser(response.user);
+
+    setUser({
+      id: response.user.id,
+      name: response.user.name,
+      role: capitalizeFirst(response.user.role) as UserRole,
+      specialty: response.user.specialty
+        ? (capitalizeFirst(response.user.specialty) as UserSpecialty)
+        : null,
+      email: email.trim().toLowerCase(),
+    });
   };
 
   // Restore session on app start
@@ -112,33 +157,68 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     setOnUnauthorized(() => {
       clearAccessToken();
-      clearAll();
+      Promise.all([clearAll(), clearOnboardingDismissed()]);
       setUser(null);
     });
   }, []);
 
   const login = async (
     email: string,
-    password: string
-  ): Promise<{ success: boolean; error?: string }> => {
+    password: string,
+  ): Promise<AuthActionResult> => {
     try {
       const response = await loginApi(email.trim().toLowerCase(), password);
+      await persistAuthResponse(response, email);
+      return { success: true };
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, error: err.errors[0] };
+      }
+      return { success: false, error: 'Erro de conexão. Tente novamente.' };
+    }
+  };
 
-      // Store token
-      setAccessToken(response.token);
-      await saveToken(response.token);
+  const checkEmail = async (email: string) => {
+    try {
+      const data = await checkEmailApi(email.trim().toLowerCase());
+      return { success: true, data };
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, error: err.errors[0] };
+      }
+      return { success: false, error: 'Erro de conexão. Tente novamente.' };
+    }
+  };
 
-      // Store user
-      await saveUser(response.user);
+  const setFirstPassword = async (
+    email: string,
+    newPassword: string,
+  ): Promise<AuthActionResult> => {
+    try {
+      const response = await setFirstPasswordApi(
+        email.trim().toLowerCase(),
+        newPassword,
+      );
+      await persistAuthResponse(response, email);
+      return { success: true };
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, error: err.errors[0] };
+      }
+      return { success: false, error: 'Erro de conexão. Tente novamente.' };
+    }
+  };
 
-      setUser({
-        id: response.user.id,
-        name: response.user.name,
-        role: capitalizeFirst(response.user.role) as UserRole,
-        specialty: (response.user.specialty ? capitalizeFirst(response.user.specialty) as UserSpecialty : null),
-        email: email.trim().toLowerCase(),
+  const registerFirstAdmin = async (
+    input: RegisterFirstAdminInput,
+  ): Promise<AuthActionResult> => {
+    try {
+      const response = await registerFirstAdminApi({
+        name: input.name.trim(),
+        email: input.email.trim().toLowerCase(),
+        password: input.password,
       });
-
+      await persistAuthResponse(response, input.email);
       return { success: true };
     } catch (err) {
       if (err instanceof ApiError) {
@@ -150,7 +230,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, login, logout: performLogout }}
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        checkEmail,
+        setFirstPassword,
+        registerFirstAdmin,
+        logout: performLogout,
+      }}
     >
       {children}
     </AuthContext.Provider>
