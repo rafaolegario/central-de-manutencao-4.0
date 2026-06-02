@@ -23,7 +23,9 @@ public class CreateUserService
                 Name = request.Name,
                 Email = request.Email,
                 Specialty = Enum.TryParse<central_de_manutencao.Api.Enums.Specialties>(request.Specialty, out var specialty) ? specialty : null,
-                Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Password = string.Empty,
+                MustSetPassword = true,
+                Active = true,
                 Role = Roles.Technician
             };
 
