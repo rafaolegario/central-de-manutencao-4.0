@@ -15,33 +15,148 @@ Marque cada item com `[x]` conforme for testando. Registre bugs ou melhorias com
   - **Técnico** — credenciais de técnico
 - [ ] Pelo menos uma ordem de serviço com status `EmAndamento` atribuída ao Técnico (necessário para retirada de ferramentas)
 
+> ⚠️ Algumas seções (1.4, 1.5, 1A) exigem um **banco zerado** para exercitar os fluxos de primeiro acesso. Para resetar: pare a API, rode `docker compose down -v` (ou apague/recrie o volume do Postgres) e reinicie — o `dotnet run` aplica as migrações novamente e o admin semeado é recriado.
+
 ### Credenciais de teste
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Admin | _(preencher)_ | _(preencher)_ |
-| Técnico | _(preencher)_ | _(preencher)_ |
+| Admin (semeado) | _(preencher, de `AdminUser:Email`)_ | _(preencher, de `AdminUser:Password`)_ |
+| Admin (auto-cadastro) | _(preencher após rodar a seção 1.4)_ | _(preencher)_ |
+| Técnico (convidado, senha definida) | _(preencher após rodar a seção 1.5)_ | _(preencher)_ |
+| Técnico (convidado, senha AINDA não definida) | _(preencher para testar 1.5)_ | _(nenhuma — usar fluxo de primeiro acesso)_ |
 
 ---
 
 ## 1. Autenticação
 
-### 1.1 Login
-- [ ] Abrir o app do zero — redirecionado para a tela de login
-- [ ] Enviar com e-mail vazio → erro de validação
-- [ ] Enviar com senha vazia → erro de validação
-- [ ] Enviar com credenciais erradas → mensagem de erro da API exibida
-- [ ] Login como **Admin** → cai no Dashboard
-- [ ] Login como **Técnico** → cai no Dashboard
+### 1.1 Login — Duas Etapas (E-mail → Senha)
+**Etapa 1 — E-mail**
+- [ ] Abrir o app do zero — redirecionado para a tela de login com apenas o campo de e-mail visível (sem campo de senha)
+- [ ] Título exibe "Entre com seu e-mail para continuar"
+- [ ] Rótulo do botão de envio é "Continuar" (NÃO "Entrar")
+- [ ] Enviar com e-mail vazio → erro inline "Informe o e-mail."
+- [ ] Enviar com e-mail existente do **Admin** → formulário transiciona para a etapa 2 (campo de senha aparece, link "Trocar e-mail" surge)
+- [ ] Enviar com e-mail existente do **Técnico** (senha já definida) → formulário transiciona para a etapa 2
+- [ ] Enviar com e-mail desconhecido quando admins existem → erro inline "E-mail não encontrado. Verifique com o administrador."
+
+**Etapa 2 — Senha**
+- [ ] Subtítulo exibe "Olá! Informe a senha de {email}"
+- [ ] Link "Trocar e-mail" no topo — tocar retorna para a etapa 1, limpa senha e erro
+- [ ] Campo de senha recebe foco automaticamente
+- [ ] Enviar com senha vazia → erro inline "Informe a senha."
+- [ ] Enviar com senha errada → mensagem de erro da API exibida ("Usuário ou senha incorretos.")
+- [ ] Enviar com credenciais corretas como **Admin** → cai no Dashboard (ou no onboarding — ver Seção 1A)
+- [ ] Enviar com credenciais corretas como **Técnico** → cai no Dashboard
+- [ ] Ícone de olho para mostrar/ocultar senha funciona
 
 ### 1.2 Persistência de Sessão
 - [ ] Login como Admin → fechar o app completamente → reabrir → já está logado (sem tela de login)
 - [ ] Renovação automática do token: deixar o app ocioso, reabrir → ainda autenticado
 
 ### 1.3 Logout
-- [ ] Aba Perfil → tocar em "Sair da Conta" → alerta de confirmação aparece
-- [ ] Tocar em "Cancelar" → permanece no Perfil, ainda logado
-- [ ] Tocar em "Sair" → redirecionado para a tela de login
+- [ ] Aba Perfil → tocar em "Sair da Conta" → usuário é deslogado imediatamente e redirecionado para o login (sem diálogo de confirmação — foi removido)
 - [ ] Após logout, voltar (botão voltar) → não consegue acessar rotas protegidas
+- [ ] Após logout, a flag "Onboarding dispensado" é limpa (verificável repetindo a seção 1A com o mesmo admin no mesmo dispositivo)
+
+### 1.4 Auto-cadastro do Primeiro Admin (apenas banco zerado)
+> Requer: tabela `Users` vazia (ou nenhum usuário com role `Admin`). Ver nota de Configuração.
+
+- [ ] Abrir o app do zero → tela de login
+- [ ] Ao montar, a tela de login exibe o link "**Primeira configuração? Criar conta de administrador**" abaixo do botão "Continuar"
+- [ ] Digitar qualquer e-mail novo (ex: `admin@exemplo.com`) → tocar em "Continuar"
+- [ ] O app navega para `/(auth)/register` com o e-mail pré-preenchido
+- [ ] Cabeçalho da tela de cadastro: "Configuração inicial"
+- [ ] Banner informativo: "Este passo só está disponível quando ainda não existe nenhum administrador cadastrado."
+- [ ] Botão "Voltar" retorna para a tela de login
+- [ ] Enviar com nome vazio → "Informe seu nome."
+- [ ] Enviar com e-mail inválido (sem `@`) → "Informe um e-mail válido."
+- [ ] Enviar com senha < 6 caracteres → "A senha deve ter no mínimo 6 caracteres."
+- [ ] Enviar com confirmação divergente → "As senhas não coincidem."
+- [ ] Enviar com todos os campos válidos → admin é criado, app faz login automático e direciona para o **Passo 1 do Assistente de Onboarding do Admin** (ver Seção 1A)
+- [ ] Depois que o primeiro admin existir, tentar cadastrar de novo (ex: navegando diretamente para `/(auth)/register`) e enviar → API retorna "Já existe um administrador cadastrado. Use o login normal." e exibe como erro inline
+- [ ] Depois que o primeiro admin existir, o link "Primeira configuração?" **desaparece** da tela de login
+
+### 1.5 Primeiro Acesso do Técnico (Definir Senha)
+> Requer: um técnico criado por um admin (via seção 6.4) que ainda não definiu senha.
+
+- [ ] Como Admin, criar um técnico (ex: `tech-novo@exemplo.com`) — sem campo de senha no formulário (coberto em 6.4)
+- [ ] Deslogar
+- [ ] Na tela de login, digitar o e-mail do técnico → tocar em "Continuar"
+- [ ] O app navega para `/(auth)/set-password?email=tech-novo@exemplo.com`
+- [ ] Cabeçalho: "Bem-vindo!", subtítulo inclui o e-mail
+- [ ] Botão "Voltar" retorna para o login
+- [ ] Enviar com senha < 6 caracteres → "A senha deve ter no mínimo 6 caracteres."
+- [ ] Enviar com confirmação divergente → "As senhas não coincidem."
+- [ ] Enviar senha válida → usuário é logado automaticamente, cai no Dashboard do técnico
+- [ ] Repetir: deslogar, digitar o mesmo e-mail do técnico → o app vai direto para a **etapa 2 (senha)**, NÃO para set-password (porque `MustSetPassword` agora é `false`)
+- [ ] Tentar usar as credenciais do Admin semeado pela rota antiga `/api/Authenticate/login` funciona normalmente (sem bloqueio de `MustSetPassword` — o admin semeado teve a flag setada como `false` durante a migração)
+
+### 1.6 Casos de Borda do Email-First
+- [ ] Enviar etapa 1 com e-mail contendo espaços ou letras maiúsculas → servidor normaliza (lowercase + trim); fluxo prossegue corretamente
+- [ ] Derrubar o backend → digitar e-mail → tocar em "Continuar" → "Erro de conexão. Tente novamente." (ou similar)
+- [ ] Em banco zerado: digitar qualquer e-mail → direcionado para cadastro (não para erro "usuário não encontrado"), pois `anyAdminExists` é `false`
+
+---
+
+## 1A. Assistente de Onboarding do Admin
+
+Dispara automaticamente quando um Admin está autenticado e `GET /api/Onboarding/status` retorna `complete: false` (ou seja, pelo menos um entre ferramentas, itens de estoque ou técnicos está vazio) E a flag local `@onboarding_dismissed` não está setada.
+
+### 1A.1 Porta de entrada (comportamento do gate)
+- [ ] Banco zerado + admin recém-criado (via 1.4) → após cadastro, app direciona direto para `/(app)/onboarding/admin/add-tool`, NÃO para `/(app)/(tabs)`
+- [ ] Se apenas ferramentas existem (sem estoque, sem técnicos) → gate direciona para **add-stock** (pula add-tool)
+- [ ] Se ferramentas + estoque existem (sem técnicos) → gate direciona para **invite-technician**
+- [ ] Se os três existem → sem redirecionamento; admin cai no Dashboard normalmente
+- [ ] Como **Técnico** (em qualquer estado), nenhum gate de onboarding dispara — Tabs renderizam imediatamente
+- [ ] Gate exibe um spinner centralizado enquanto `GET /api/Onboarding/status` está carregando
+
+### 1A.2 Passo 1 — Cadastre sua primeira ferramenta
+- [ ] Rótulo do passo "PASSO 1 DE 3"
+- [ ] Título "Cadastre sua primeira ferramenta"
+- [ ] Subtítulo explica o que são ferramentas
+- [ ] Campos: Código, Nome, Quantidade total (mesma validação de `/tools/create`)
+- [ ] Enviar vazio → erros nos 3 campos
+- [ ] Enviar quantidade 0 → "Deve ser um número inteiro positivo."
+- [ ] "Cadastrar e continuar" com dados válidos → ferramenta criada (verificável no banco / aba Ferramentas depois) → navega para `add-stock`
+- [ ] "Pular esta etapa" (botão fantasma) → navega para `add-stock` SEM criar ferramenta
+- [ ] Erro da API (ex: código duplicado) aparece em caixa vermelha abaixo do formulário
+
+### 1A.3 Passo 2 — Cadastre seu primeiro item de estoque
+- [ ] Rótulo do passo "PASSO 2 DE 3"
+- [ ] Título "Cadastre seu primeiro item de estoque"
+- [ ] Campos: Código, Nome, Quantidade inicial, Quantidade mínima (mesma validação de `/stock/create`)
+- [ ] Enviar vazio → 4 erros de campo
+- [ ] Enviar válido → item criado → navega para `invite-technician`
+- [ ] "Pular esta etapa" → pula para `invite-technician`
+
+### 1A.4 Passo 3 — Convide seu primeiro técnico
+- [ ] Rótulo do passo "PASSO 3 DE 3"
+- [ ] Título "Convide seu primeiro técnico"
+- [ ] Subtítulo deixa claro que o técnico definirá a própria senha
+- [ ] Campos: Nome, E-mail, chips de Especialidade — **SEM campo de senha**
+- [ ] Enviar vazio → erros de campo em Nome e E-mail
+- [ ] Enviar e-mail inválido → "E-mail inválido."
+- [ ] "Convidar e finalizar" com dados válidos → usuário criado → navega para `completed`
+- [ ] O técnico criado tem `MustSetPassword = true` no banco (verificar tentando login normal → "Usuário deve definir uma senha…")
+- [ ] "Pular esta etapa" → pula para `completed`
+
+### 1A.5 Passo 4 — Tudo pronto! (Celebração)
+- [ ] Ícone grande de check verde/laranja
+- [ ] Título "Tudo pronto!"
+- [ ] Seta `@onboarding_dismissed = 'true'` no AsyncStorage ao montar
+- [ ] Redireciona automaticamente para `/(app)/(tabs)` após ~2.5 segundos
+- [ ] Botão "Ir para o painel" redireciona imediatamente
+- [ ] Após cair nas tabs, abrir o app novamente NÃO direciona de volta para o assistente (a flag dispensada se mantém)
+
+### 1A.6 Loop de Pular Tudo (prevenção de re-aprisionamento)
+- [ ] Banco zerado, cadastrar admin, pular TODOS os três passos → cai no completed → tabs
+- [ ] Fechar e reabrir o app (ainda autenticado) → sem assistente, cai nas tabs (porque `@onboarding_dismissed` está setada)
+- [ ] Deslogar → `@onboarding_dismissed` é limpa
+- [ ] Logar novamente com o mesmo admin → assistente dispara de novo (porque status ainda está incompleto e a flag foi limpa). Esse é o comportamento documentado — ver Verificação §6 no plano.
+
+### 1A.7 Caminho de Conclusão (sem pular)
+- [ ] Banco zerado, cadastrar admin, preencher CADA passo → status atinge `complete: true`
+- [ ] Logins subsequentes pulam o onboarding por completo (status.complete = true curto-circuita o gate)
 
 ---
 
@@ -278,20 +393,20 @@ Marque cada item com `[x]` conforme for testando. Registre bugs ou melhorias com
 - [ ] Usuário desativado ainda visível na lista com badge "Inativo"
 - [ ] Filtro "Inativos" na lista exibe o usuário desativado
 
-### 6.4 Cadastrar Usuário (apenas Admin)
+### 6.4 Cadastrar Usuário (apenas Admin) — Fluxo de Convite
 - [ ] Como Técnico → "Acesso Restrito"
 - [ ] Chip de perfil mostra "Função: Técnico" (novos usuários sempre criados como Técnico)
-- [ ] Campos: Nome Completo, E-mail, Senha, chips de Especialidade
-- [ ] Campo de senha: toggle mostrar/ocultar funciona
+- [ ] Campos: Nome Completo, E-mail, chips de Especialidade — **SEM campo de senha**
+- [ ] Abaixo do campo de e-mail, um banner de convite exibe: "O técnico receberá um convite e definirá a senha no primeiro acesso."
 - [ ] Chips de especialidade: Eletricista, Mecânico, Eletromecânico, Geral — apenas um selecionável por vez
-- [ ] Enviar com nome vazio → erro
-- [ ] Enviar com e-mail vazio → erro
-- [ ] Enviar com e-mail inválido (sem @) → erro
-- [ ] Enviar com senha curta (< 6 caracteres) → erro
-- [ ] Formulário válido → carregando → alerta de sucesso → voltar
-- [ ] Novo usuário aparece na lista de Usuários
-- [ ] Novo usuário consegue fazer login com as credenciais criadas
-- [ ] Erro da API → alerta com mensagem
+- [ ] Enviar com nome vazio → erro "Nome é obrigatório."
+- [ ] Enviar com e-mail vazio → erro "E-mail é obrigatório."
+- [ ] Enviar com e-mail inválido (sem @) → erro "E-mail inválido."
+- [ ] Formulário válido → carregando → alerta de sucesso "Convite enviado" / "O técnico definirá a senha no primeiro acesso usando este e-mail." → voltar
+- [ ] Novo usuário aparece na lista de Usuários — no banco o usuário tem `Active = true` e `MustSetPassword = true`. (A lista de Usuários atualmente não expõe MustSetPassword; tudo bem.)
+- [ ] Novo usuário NÃO consegue logar pela rota antiga e-mail+senha (servidor retorna "Usuário deve definir uma senha…")
+- [ ] Novo usuário CONSEGUE completar primeiro acesso via seção 1.5 → depois disso loga normalmente
+- [ ] Erro da API (ex: e-mail duplicado) → alerta com mensagem "Já existe um usuário com este email."
 
 ### 6.5 Editar Usuário (apenas Admin)
 - [ ] Botão "Editar Usuário" visível para Admin
@@ -342,9 +457,11 @@ Fluxos que envolvem múltiplas funcionalidades.
 - [ ] Admin reabastece um item com estoque baixo
 - [ ] Dashboard "Itens em baixa" diminui se era o único item baixo
 
-### 9.2 Ciclo de vida do usuário
-- [ ] Admin cria um novo usuário Técnico
+### 9.2 Ciclo de vida do usuário (com primeiro acesso)
+- [ ] Admin cria um novo usuário Técnico (sem campo de senha — ver 6.4)
 - [ ] Novo usuário aparece na lista de Usuários
+- [ ] Deslogar, logar de novo no e-mail do técnico → direcionado para set-password (ver 1.5)
+- [ ] Após o técnico definir senha, ele consegue logar normalmente nas tentativas seguintes
 - [ ] Admin desativa o usuário
 - [ ] Usuário desativado mostra "Inativo" na lista
 - [ ] Admin reativa o usuário
