@@ -16,9 +16,5 @@ public class CreateUserValidator : AbstractValidator<CreateUserRequestJson>
         RuleFor(x => x.Specialty)
             .NotEmpty().WithMessage("A especialidade é obrigatória.")
             .MaximumLength(50).WithMessage("A especialidade deve ter no máximo 50 caracteres.");
-
-        RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("A senha é obrigatória.")
-            .MinimumLength(6).WithMessage("A senha deve ter no mínimo 6 caracteres.");
     }
 }
