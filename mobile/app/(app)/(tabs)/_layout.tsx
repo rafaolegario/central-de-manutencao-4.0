@@ -1,12 +1,47 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { HapticTab } from '@/components/haptic-tab';
 import { useAuth } from '@/context/AuthContext';
+import { getOnboardingDismissed } from '@/services/onboarding/onboardingStorage';
+import {
+  pickFirstIncompleteStep,
+  useOnboardingStatus,
+} from '@/services/onboarding/useOnboarding';
 
 export default function TabsLayout() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
+
+  const [dismissed, setDismissed] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    getOnboardingDismissed().then((v) => {
+      if (!cancelled) setDismissed(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const status = useOnboardingStatus(isAdmin);
+
+  // Admin onboarding gate
+  if (isAdmin) {
+    if (dismissed === null || status.isLoading) {
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      );
+    }
+    if (status.data && !status.data.complete && !dismissed) {
+      const next = pickFirstIncompleteStep(status.data);
+      return <Redirect href={`/(app)/onboarding/admin/${next}`} />;
+    }
+  }
 
   return (
     <Tabs
