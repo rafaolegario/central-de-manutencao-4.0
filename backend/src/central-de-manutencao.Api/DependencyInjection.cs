@@ -9,6 +9,7 @@ using central_de_manutencao.Api.Database.Repositories.Stock;
 using central_de_manutencao.Api.Services.Stock;
 using central_de_manutencao.Api.Database.Repositories.Tools;
 using central_de_manutencao.Api.Services.Tool;
+using central_de_manutencao.Api.Services.Onboarding;
 using central_de_manutencao.Api.Token;
 
 namespace central_de_manutencao.Api
@@ -31,6 +32,9 @@ namespace central_de_manutencao.Api
             services.AddScoped<IUserRepository, UserRepository>();
 
             services.AddScoped<AuthenticateService>();
+            services.AddScoped<CheckEmailService>();
+            services.AddScoped<SetFirstPasswordService>();
+            services.AddScoped<RegisterFirstAdminService>();
             services.AddScoped<RefreshTokenService>();
             services.AddScoped<LogoutService>();
             services.AddScoped<CreateUserService>();
@@ -66,6 +70,8 @@ namespace central_de_manutencao.Api
             services.AddScoped<WithdrawToolService>();
             services.AddScoped<ReturnToolService>();
             services.AddScoped<ListActiveToolUsagesService>();
+
+            services.AddScoped<GetOnboardingStatusService>();
 
             return services;
         }
