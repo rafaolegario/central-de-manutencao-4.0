@@ -32,8 +32,6 @@ export default function CreateUserScreen() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [specialty, setSpecialty] = useState<UserSpecialty>('General');
   const { mutate: createUser, isLoading: isSubmitting, error: apiError } = useCreateUser();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -58,8 +56,6 @@ export default function CreateUserScreen() {
     if (!name.trim()) e.name = 'Nome é obrigatório.';
     if (!email.trim()) e.email = 'E-mail é obrigatório.';
     else if (!email.includes('@')) e.email = 'E-mail inválido.';
-    if (!password) e.password = 'Senha é obrigatória.';
-    else if (password.length < 6) e.password = 'Senha deve ter ao menos 6 caracteres.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -67,10 +63,12 @@ export default function CreateUserScreen() {
   const handleSubmit = async () => {
     if (!validate()) return;
     try {
-      await createUser({ name, email, password, specialty });
-      Alert.alert('Sucesso', 'Usuário criado com sucesso!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      await createUser({ name, email, specialty });
+      Alert.alert(
+        'Convite enviado',
+        'O técnico definirá a senha no primeiro acesso usando este e-mail.',
+        [{ text: 'OK', onPress: () => router.back() }],
+      );
     } catch {
       Alert.alert('Erro', apiError?.message ?? 'Não foi possível criar o usuário.');
     }
@@ -116,17 +114,11 @@ export default function CreateUserScreen() {
 
           <View style={styles.gap} />
 
-          <AppInput
-            label="Senha *"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            leftIcon="lock"
-            rightIcon={showPassword ? 'visibility-off' : 'visibility'}
-            onRightIconPress={() => setShowPassword((v) => !v)}
-            placeholder="Mínimo 6 caracteres"
-            error={errors.password}
-          />
+          <View style={styles.inviteBanner}>
+            <Text style={styles.inviteBannerText}>
+              O técnico receberá um convite e definirá a senha no primeiro acesso.
+            </Text>
+          </View>
 
           <View style={styles.gap} />
 
@@ -199,6 +191,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: Colors.primary,
+  },
+  inviteBanner: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: Colors.radiusMd,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  inviteBannerText: {
+    fontSize: 13,
+    color: Colors.primary,
+    lineHeight: 18,
   },
   fieldLabel: {
     fontSize: 14,
