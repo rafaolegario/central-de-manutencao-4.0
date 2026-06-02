@@ -26,6 +26,11 @@ namespace central_de_manutencao.Api.Services.Auth
 
             var user = await _userRepository.GetByEmail(request.Email) ?? throw new NotFoundException("Usuário ou senha incorretos.");
 
+            if (user.MustSetPassword)
+            {
+                throw new NotFoundException("Usuário deve definir uma senha. Use o e-mail para iniciar o primeiro acesso.");
+            }
+
             var passwordMatch = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
             if (!passwordMatch)
             {
