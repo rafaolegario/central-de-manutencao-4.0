@@ -23,6 +23,43 @@ public class AuthenticateController : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
+    [HttpPost("check-email")]
+    [ProducesResponseType(typeof(CheckEmailResponseJson), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CheckEmail(
+        [FromServices] CheckEmailService useCase,
+        [FromBody] CheckEmailRequestJson request)
+    {
+        var response = await useCase.Execute(request);
+        return Ok(response);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("set-password")]
+    [ProducesResponseType(typeof(AuthenticateResponseJson), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetPassword(
+        [FromServices] SetFirstPasswordService useCase,
+        [FromBody] SetFirstPasswordRequestJson request)
+    {
+        var response = await useCase.Execute(request);
+        return Ok(response);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("register-first-admin")]
+    [ProducesResponseType(typeof(AuthenticateResponseJson), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RegisterFirstAdmin(
+        [FromServices] RegisterFirstAdminService useCase,
+        [FromBody] RegisterFirstAdminRequestJson request)
+    {
+        var response = await useCase.Execute(request);
+        return Ok(response);
+    }
+
     [Authorize]
     [HttpPost("refresh")]
     [ProducesResponseType(typeof(RefreshTokenResponseJson), StatusCodes.Status200OK)]
