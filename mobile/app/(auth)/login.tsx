@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -26,21 +26,6 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [anyAdminExists, setAnyAdminExists] = useState<boolean | null>(null);
-
-  // Probe on mount: do any admins exist? Used to show the "first setup" hint.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const res = await checkEmail('');
-      if (!cancelled && res.success && res.data) {
-        setAnyAdminExists(res.data.anyAdminExists);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [checkEmail]);
 
   const handleEmailSubmit = async () => {
     if (!email.trim()) {
@@ -58,7 +43,6 @@ export default function LoginScreen() {
     }
 
     const { exists, mustSetPassword, anyAdminExists: hasAdmins } = result.data;
-    setAnyAdminExists(hasAdmins);
 
     if (!exists && !hasAdmins) {
       router.push({
@@ -105,6 +89,13 @@ export default function LoginScreen() {
     setError('');
   };
 
+  const goToRegister = () => {
+    router.push({
+      pathname: '/(auth)/register',
+      params: { email: email.trim().toLowerCase() },
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
@@ -124,7 +115,7 @@ export default function LoginScreen() {
             <Text style={styles.subtitle}>
               {step === 'email'
                 ? 'Entre com seu e-mail para continuar'
-                : `Olá! Informe a senha de ${email}`}
+                : 'Informe sua senha para continuar'}
             </Text>
           </View>
 
@@ -154,21 +145,16 @@ export default function LoginScreen() {
                   size="lg"
                 />
 
-                {anyAdminExists === false ? (
-                  <TouchableOpacity
-                    style={styles.firstSetupLink}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/(auth)/register',
-                        params: { email: email.trim().toLowerCase() },
-                      })
-                    }
-                  >
-                    <Text style={styles.firstSetupLinkText}>
-                      Primeira configuração? Criar conta de administrador
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
+                <TouchableOpacity
+                  style={styles.firstSetupLink}
+                  onPress={goToRegister}
+                  accessibilityRole="link"
+                  accessibilityLabel="Criar conta de administrador"
+                >
+                  <Text style={styles.firstSetupLinkText}>
+                    Primeira configuração? Criar conta de administrador
+                  </Text>
+                </TouchableOpacity>
               </>
             ) : (
               <>
@@ -176,6 +162,15 @@ export default function LoginScreen() {
                   <MaterialIcons name="arrow-back" size={18} color={Colors.primary} />
                   <Text style={styles.backText}>Trocar e-mail</Text>
                 </TouchableOpacity>
+
+                <View style={styles.spacer} />
+
+                <AppInput
+                  label="E-mail"
+                  value={email}
+                  editable={false}
+                  leftIcon="email"
+                />
 
                 <View style={styles.spacer} />
 
@@ -279,6 +274,8 @@ const styles = StyleSheet.create({
   firstSetupLink: {
     marginTop: 24,
     alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   firstSetupLinkText: {
     fontSize: 14,

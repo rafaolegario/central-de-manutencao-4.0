@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,11 +17,14 @@ import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 
+type ProbeState = 'loading' | 'available' | 'already-configured';
+
 export default function RegisterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string }>();
-  const { registerFirstAdmin } = useAuth();
+  const { registerFirstAdmin, checkEmail } = useAuth();
 
+  const [probeState, setProbeState] = useState<ProbeState>('loading');
   const [name, setName] = useState('');
   const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');
@@ -28,6 +32,25 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Probe whether registration is still available (no admin exists yet).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await checkEmail('');
+      if (cancelled) return;
+      if (res.success && res.data) {
+        setProbeState(res.data.anyAdminExists ? 'already-configured' : 'available');
+      } else {
+        // If the probe fails (offline, server down) fall through to the form;
+        // the backend will reject the submission with a clear error.
+        setProbeState('available');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [checkEmail]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -56,6 +79,9 @@ export default function RegisterScreen() {
     // On success, root navigator routes into admin onboarding wizard.
   };
 
+  const goBack = () => router.back();
+  const goToLogin = () => router.replace('/(auth)/login');
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
@@ -67,97 +93,126 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backRow}
-          >
+          <TouchableOpacity onPress={goBack} style={styles.backRow}>
             <MaterialIcons name="arrow-back" size={20} color={Colors.primary} />
             <Text style={styles.backText}>Voltar</Text>
           </TouchableOpacity>
 
-          <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <MaterialIcons
-                name="admin-panel-settings"
-                size={36}
-                color={Colors.primary}
+          {probeState === 'loading' ? (
+            <View style={styles.centeredState}>
+              <ActivityIndicator color={Colors.primary} />
+            </View>
+          ) : probeState === 'already-configured' ? (
+            <View style={styles.centeredState}>
+              <View style={styles.logoCircle}>
+                <MaterialIcons
+                  name="lock-outline"
+                  size={36}
+                  color={Colors.primary}
+                />
+              </View>
+              <Text style={styles.title}>Configuração já concluída</Text>
+              <Text style={styles.subtitle}>
+                Já existe um administrador neste sistema. Faça login ou peça
+                acesso a um administrador existente.
+              </Text>
+
+              <View style={styles.spacerLg} />
+
+              <AppButton
+                label="Voltar ao login"
+                onPress={goToLogin}
+                fullWidth
+                size="lg"
               />
             </View>
-            <Text style={styles.title}>Configuração inicial</Text>
-            <Text style={styles.subtitle}>
-              Crie a conta do administrador para começar a usar o sistema.
-            </Text>
-          </View>
+          ) : (
+            <>
+              <View style={styles.logoContainer}>
+                <View style={styles.logoCircle}>
+                  <MaterialIcons
+                    name="admin-panel-settings"
+                    size={36}
+                    color={Colors.primary}
+                  />
+                </View>
+                <Text style={styles.title}>Configuração inicial</Text>
+                <Text style={styles.subtitle}>
+                  Crie a conta do administrador para começar a usar o sistema.
+                </Text>
+              </View>
 
-          <View style={styles.banner}>
-            <MaterialIcons name="info-outline" size={18} color={Colors.primary} />
-            <Text style={styles.bannerText}>
-              Este passo só está disponível quando ainda não existe nenhum
-              administrador cadastrado.
-            </Text>
-          </View>
+              <View style={styles.banner}>
+                <MaterialIcons name="info-outline" size={18} color={Colors.primary} />
+                <Text style={styles.bannerText}>
+                  Este passo só está disponível quando ainda não existe nenhum
+                  administrador cadastrado.
+                </Text>
+              </View>
 
-          <View style={styles.spacer} />
+              <View style={styles.spacer} />
 
-          <View style={styles.form}>
-            <AppInput
-              label="Nome completo"
-              value={name}
-              onChangeText={setName}
-              placeholder="Ex: Maria Souza"
-              leftIcon="person"
-              autoCapitalize="words"
-            />
+              <View style={styles.form}>
+                <AppInput
+                  label="Nome completo"
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Ex: Maria Souza"
+                  leftIcon="person"
+                  autoCapitalize="words"
+                />
 
-            <View style={styles.spacer} />
+                <View style={styles.spacer} />
 
-            <AppInput
-              label="E-mail"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              leftIcon="email"
-              placeholder="admin@empresa.com"
-            />
+                <AppInput
+                  label="E-mail"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  leftIcon="email"
+                  placeholder="admin@empresa.com"
+                />
 
-            <View style={styles.spacer} />
+                <View style={styles.spacer} />
 
-            <AppInput
-              label="Senha"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              leftIcon="lock"
-              rightIcon={showPassword ? 'visibility-off' : 'visibility'}
-              onRightIconPress={() => setShowPassword((v) => !v)}
-              placeholder="Mínimo 6 caracteres"
-            />
+                <AppInput
+                  label="Senha"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  leftIcon="lock"
+                  rightIcon={showPassword ? 'visibility-off' : 'visibility'}
+                  onRightIconPress={() => setShowPassword((v) => !v)}
+                  placeholder="Mínimo 6 caracteres"
+                />
 
-            <View style={styles.spacer} />
+                <View style={styles.spacer} />
 
-            <AppInput
-              label="Confirmar senha"
-              value={confirm}
-              onChangeText={setConfirm}
-              secureTextEntry={!showPassword}
-              leftIcon="lock"
-              placeholder="Repita a senha"
-            />
+                <AppInput
+                  label="Confirmar senha"
+                  value={confirm}
+                  onChangeText={setConfirm}
+                  secureTextEntry={!showPassword}
+                  leftIcon="lock"
+                  placeholder="Repita a senha"
+                />
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <View style={styles.spacerLg} />
+                <View style={styles.spacerLg} />
 
-            <AppButton
-              label="Criar conta de administrador"
-              onPress={handleSubmit}
-              loading={isLoading}
-              fullWidth
-              size="lg"
-            />
-          </View>
+                <AppButton
+                  label="Criar conta de administrador"
+                  onPress={handleSubmit}
+                  loading={isLoading}
+                  fullWidth
+                  size="lg"
+                />
+              </View>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -193,6 +248,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     marginBottom: 24,
+  },
+  centeredState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    marginTop: 80,
   },
   logoCircle: {
     width: 72,
