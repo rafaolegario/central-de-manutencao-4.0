@@ -8,4 +8,5 @@ public class StockItem
     public int Quantity { get; set; }
     public int MinQuantity { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public bool IsDeleted { get; set; } = false;
 }
