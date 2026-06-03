@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,11 +13,13 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useCreateStockItem } from '@/services/stock/useStock';
 
 export default function CreateStockScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -66,11 +67,10 @@ export default function CreateStockScreen() {
     if (!validate()) return;
     try {
       await createStockItem({ code, name, quantity, minQuantity });
-      Alert.alert('Sucesso', 'Item de estoque cadastrado com sucesso!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess('Item de estoque cadastrado com sucesso.');
+      router.replace('/(app)/(tabs)/inventory');
     } catch {
-      Alert.alert('Erro', apiError?.message ?? 'Não foi possível cadastrar o item.');
+      showError(apiError?.errors?.[0] ?? 'Não foi possível cadastrar o item.');
     }
   };
 
