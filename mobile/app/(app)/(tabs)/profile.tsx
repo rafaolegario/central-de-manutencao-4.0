@@ -1,27 +1,25 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { ROLE_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
-import { MOCK_SERVICE_ORDERS } from '@/data/mock';
+import { useOrders } from '@/services/orders/useOrders';
 import { getInitials } from '@/utils/format';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
 
+  const { data: assignedData, isLoading: isLoadingAssigned } = useOrders(
+    user ? { technicianId: user.id } : undefined
+  );
+
   if (!user) return null;
 
   const initials = getInitials(user.name);
-
-  const ordersCreated = MOCK_SERVICE_ORDERS.filter(
-    (o) => o.createdBy === user.id
-  ).length;
-  const ordersAssigned = MOCK_SERVICE_ORDERS.filter(
-    (o) => o.technicianId === user.id
-  ).length;
+  const ordersAssigned = assignedData?.totalCount ?? 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -65,12 +63,11 @@ export default function ProfileScreen() {
           <Text style={styles.statsTitle}>Atividade</Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{ordersCreated}</Text>
-              <Text style={styles.statLabel}>Ordens criadas</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{ordersAssigned}</Text>
+              {isLoadingAssigned ? (
+                <ActivityIndicator color={Colors.primary} />
+              ) : (
+                <Text style={styles.statValue}>{ordersAssigned}</Text>
+              )}
               <Text style={styles.statLabel}>Atribuídas a mim</Text>
             </View>
           </View>
