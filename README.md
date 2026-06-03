@@ -68,5 +68,5 @@ Requer [Node.js](https://nodejs.org/) instalado. Use o app [Expo Go](https://exp
 
 ## Observações
 
-- O app mobile atualmente usa **dados mockados** e ainda não se integra com a API real. A variável `EXPO_PUBLIC_API_URL` já está configurada no `docker-compose.yml` para quando a integração for implementada.
+- O app mobile consome a API real via `EXPO_PUBLIC_API_URL` (configurada no `docker-compose.yml`).
 - O usuário admin definido nas variáveis de ambiente é criado automaticamente na primeira inicialização da API.
