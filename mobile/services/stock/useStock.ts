@@ -10,6 +10,7 @@ import type {
 } from '@/types/api';
 import {
   createStockItem,
+  deleteStockItem,
   editStockItem,
   getStockItem,
   listMovements,
@@ -33,6 +34,10 @@ export function useEditStockItem() {
   return useApiMutation<{ id: string; data: EditStockItemRequest }, StockItem>(
     ({ id, data }) => editStockItem(id, data)
   );
+}
+
+export function useDeleteStockItem() {
+  return useApiMutation<string, void>(deleteStockItem);
 }
 
 export function useReplenishStock() {
