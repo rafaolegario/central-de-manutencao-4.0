@@ -3,7 +3,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useConfirm } from '@/context/ConfirmDialogContext';
+import { useToast } from '@/context/ToastContext';
 import { ROLE_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
 import { useOrders } from '@/services/orders/useOrders';
 import { useToggleUserActive, useUser } from '@/services/users/useUsers';
@@ -23,6 +24,8 @@ export default function UserDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user: currentUser } = useAuth();
+  const { confirm } = useConfirm();
+  const { showSuccess, showError } = useToast();
 
   const { data: targetUser, isLoading, error, refetch } = useUser(id);
   const { data: ordersData } = useOrders({ technicianId: id });
@@ -77,30 +80,33 @@ export default function UserDetailScreen() {
   const initials = getInitials(targetUser.name);
   const assignedOrders = ordersData?.items ?? [];
 
-  const handleToggleActive = () => {
-    const action = targetUser.active ? 'desativar' : 'ativar';
-    Alert.alert(
-      `${targetUser.active ? 'Desativar' : 'Ativar'} usuário`,
-      `Tem certeza que deseja ${action} ${targetUser.name}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          onPress: async () => {
-            try {
-              await toggleActive({ id: targetUser.id, active: !targetUser.active });
-              refetch();
-              Alert.alert(
-                'Atualizado',
-                `Usuário ${targetUser.active ? 'desativado' : 'ativado'} com sucesso.`
-              );
-            } catch {
-              Alert.alert('Erro', 'Não foi possível atualizar o usuário.');
-            }
-          },
-        },
-      ]
-    );
+  const handleEdit = () => {
+    router.push({ pathname: '/(app)/users/edit/[id]', params: { id: targetUser.id } });
+  };
+
+  const handleToggleActive = async () => {
+    const willDeactivate = targetUser.active;
+    const ok = await confirm({
+      icon: willDeactivate ? 'person-off' : 'person',
+      title: willDeactivate ? 'Desativar usuário?' : 'Ativar usuário?',
+      message: willDeactivate
+        ? `${targetUser.name} não poderá mais fazer login. Você pode reativá-lo depois.`
+        : `${targetUser.name} poderá fazer login novamente após a ativação.`,
+      confirmLabel: willDeactivate ? 'Desativar' : 'Ativar',
+      cancelLabel: 'Cancelar',
+      destructive: willDeactivate,
+    });
+    if (!ok) return;
+
+    try {
+      await toggleActive({ id: targetUser.id, active: !targetUser.active });
+      refetch();
+      showSuccess(
+        willDeactivate ? 'Usuário desativado.' : 'Usuário ativado.',
+      );
+    } catch {
+      showError('Não foi possível atualizar o usuário.');
+    }
   };
 
   return (
@@ -176,15 +182,13 @@ export default function UserDetailScreen() {
         )}
 
         {/* Admin actions */}
-        {currentUser?.role === 'Admin' && (
+        {currentUser?.role === 'Admin' && currentUser.id !== targetUser.id && (
           <View style={styles.actions}>
             <AppButton
               label="Editar Usuário"
               icon="edit"
               variant="secondary"
-              onPress={() =>
-                Alert.alert('Em breve', 'Função de edição em desenvolvimento.')
-              }
+              onPress={handleEdit}
               fullWidth
             />
             <AppButton
