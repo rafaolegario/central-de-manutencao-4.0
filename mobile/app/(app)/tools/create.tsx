@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,11 +13,13 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useCreateTool } from '@/services/tools/useTools';
 
 export default function CreateToolScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -60,11 +61,10 @@ export default function CreateToolScreen() {
     if (!validate()) return;
     try {
       await createTool({ code: code.trim(), name: name.trim(), totalQuantity });
-      Alert.alert('Sucesso', 'Ferramenta cadastrada com sucesso!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess('Ferramenta cadastrada com sucesso.');
+      router.replace('/(app)/(tabs)/inventory');
     } catch {
-      // error surfaced via apiError
+      showError(apiError?.errors?.[0] ?? 'Não foi possível cadastrar a ferramenta.');
     }
   };
 
