@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,40 +15,57 @@ import ServiceOrderCard from '@/components/ServiceOrderCard';
 import StatsCard from '@/components/StatsCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import {
-  MOCK_SERVICE_ORDERS,
-  MOCK_STOCK_ITEMS,
-  MOCK_TOOL_USAGES,
-  getActiveUsagesForTechnician,
-  isLowStock,
-} from '@/data/mock';
+import { useOrders } from '@/services/orders/useOrders';
+import { useStockItems } from '@/services/stock/useStock';
+import { useActiveUsages } from '@/services/tools/useTools';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const isAdmin = user?.role === 'Admin';
+
+  const {
+    data: ordersData,
+    isLoading: isLoadingOrders,
+    error: ordersError,
+    refetch: refetchOrders,
+  } = useOrders();
+  const { data: lowStockItems, refetch: refetchStock } = useStockItems(
+    isAdmin ? true : undefined
+  );
+  const { data: activeUsagesData, refetch: refetchUsages } = useActiveUsages();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchOrders();
+      if (isAdmin) refetchStock();
+      refetchUsages();
+    }, [refetchOrders, refetchStock, refetchUsages, isAdmin])
+  );
 
   const firstName = user?.name?.split(' ')[0] ?? 'Olá';
 
-  const criticalCount = MOCK_SERVICE_ORDERS.filter(
+  const orders = ordersData?.items ?? [];
+  const activeUsages = activeUsagesData?.items ?? [];
+
+  const criticalCount = orders.filter(
     (o) => o.priority === 'Critical' && o.status !== 'Canceled' && o.status !== 'Approved'
   ).length;
-  const openCount = MOCK_SERVICE_ORDERS.filter(
+  const openCount = orders.filter(
     (o) => o.status === 'Open' || o.status === 'Reopened'
   ).length;
-  const inProgressCount = MOCK_SERVICE_ORDERS.filter(
-    (o) => o.status === 'InProgress'
-  ).length;
-  const doneCount = MOCK_SERVICE_ORDERS.filter(
+  const inProgressCount = orders.filter((o) => o.status === 'InProgress').length;
+  const doneCount = orders.filter(
     (o) => o.status === 'Completed' || o.status === 'Approved'
   ).length;
 
-  const toolsInUseCount = MOCK_TOOL_USAGES.filter((u) => u.returnedAt === null).length;
-  const lowStockCount = MOCK_STOCK_ITEMS.filter(isLowStock).length;
+  const toolsInUseCount = activeUsages.length;
+  const lowStockCount = (lowStockItems ?? []).length;
   const myToolsInUseCount = user
-    ? getActiveUsagesForTechnician(user.id).length
+    ? activeUsages.filter((u) => u.technicianId === user.id).length
     : 0;
 
-  const recentOrders = [...MOCK_SERVICE_ORDERS]
+  const recentOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
@@ -109,7 +127,7 @@ export default function DashboardScreen() {
             />
           </View>
 
-          {user?.role === 'Admin' ? (
+          {isAdmin ? (
             <View style={styles.statsRow}>
               <StatsCard
                 title="Ferram. em uso"
@@ -153,18 +171,36 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {recentOrders.map((order) => (
-          <ServiceOrderCard
-            key={order.id}
-            order={order}
-            onPress={() =>
-              router.push({ pathname: '/(app)/orders/[id]', params: { id: order.id } })
-            }
-          />
-        ))}
+        {ordersError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>Erro ao carregar ordens</Text>
+            <TouchableOpacity onPress={refetchOrders}>
+              <Text style={styles.retryText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isLoadingOrders ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color={Colors.primary} />
+          </View>
+        ) : recentOrders.length === 0 ? (
+          <View style={styles.empty}>
+            <MaterialIcons name="inbox" size={48} color={Colors.textMuted} />
+            <Text style={styles.emptyText}>Nenhuma ordem recente</Text>
+          </View>
+        ) : (
+          recentOrders.map((order) => (
+            <ServiceOrderCard
+              key={order.id}
+              order={order}
+              onPress={() =>
+                router.push({ pathname: '/(app)/orders/[id]', params: { id: order.id } })
+              }
+            />
+          ))
+        )}
 
         {/* Quick actions (admin only) */}
-        {user?.role === 'Admin' && (
+        {isAdmin && (
           <>
             <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Ações Rápidas</Text>
             <View style={styles.actionRow}>
@@ -259,5 +295,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     flexWrap: 'wrap',
+  },
+  loadingContainer: {
+    paddingVertical: 32,
+    alignItems: 'center',
+  },
+  empty: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 10,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: Colors.radiusLg,
+    marginBottom: 12,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#991B1B',
+  },
+  retryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
   },
 });
