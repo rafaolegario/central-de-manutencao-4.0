@@ -1,21 +1,26 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import MetaRow from '@/components/MetaRow';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { useStockItem } from '@/services/stock/useStock';
+import { useConfirm } from '@/context/ConfirmDialogContext';
+import { useToast } from '@/context/ToastContext';
+import { useDeleteStockItem, useStockItem } from '@/services/stock/useStock';
 import { formatDate } from '@/utils/format';
 
 export default function StockDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { confirm } = useConfirm();
+  const { showSuccess, showError } = useToast();
 
   const { data: item, isLoading, error, refetch } = useStockItem(id);
+  const { mutate: deleteStockItem, isLoading: isDeleting } = useDeleteStockItem();
 
   useFocusEffect(
     useCallback(() => {
@@ -61,6 +66,30 @@ export default function StockDetailScreen() {
   }
 
   const low = item.isLow;
+
+  const handleEdit = () => {
+    router.push({ pathname: '/(app)/stock/edit/[id]', params: { id: item.id } });
+  };
+
+  const handleDelete = async () => {
+    const ok = await confirm({
+      icon: 'inventory-2',
+      title: 'Excluir Item?',
+      message:
+        'Você tem certeza que deletará esse item? Todos os dados serão perdidos.',
+      confirmLabel: 'Deletar',
+      cancelLabel: 'Cancelar',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteStockItem(item.id);
+      showSuccess('Item excluído.');
+      router.replace('/(app)/(tabs)/inventory');
+    } catch {
+      showError('Não foi possível excluir o item.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -145,10 +174,16 @@ export default function StockDetailScreen() {
           <AppButton
             label="Editar item"
             icon="edit"
-            variant="ghost"
-            onPress={() =>
-              Alert.alert('Em breve', 'Função de edição em desenvolvimento.')
-            }
+            variant="secondary"
+            onPress={handleEdit}
+            fullWidth
+          />
+          <AppButton
+            label="Excluir Item"
+            icon="delete-outline"
+            variant="danger"
+            onPress={handleDelete}
+            loading={isDeleting}
             fullWidth
           />
         </View>
