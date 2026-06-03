@@ -1,8 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
-  Alert,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
@@ -17,7 +16,9 @@ import StatusBadge from '@/components/StatusBadge';
 import { Colors } from '@/constants/theme';
 import { formatDate, formatDateTime } from '@/utils/format';
 import { useAuth } from '@/context/AuthContext';
-import { useOrder, useUpdateOrderStatus } from '@/services/orders/useOrders';
+import { useConfirm } from '@/context/ConfirmDialogContext';
+import { useToast } from '@/context/ToastContext';
+import { useDeleteOrder, useOrder } from '@/services/orders/useOrders';
 import { useUsers } from '@/services/users/useUsers';
 import type { ServiceOrderStatus } from '@/types/api';
 
@@ -35,10 +36,18 @@ export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { confirm } = useConfirm();
+  const { showSuccess, showError } = useToast();
 
   const { data: order, isLoading, error, refetch } = useOrder(id);
   const { data: usersData } = useUsers();
-  const { mutate: updateStatus, isLoading: isCanceling } = useUpdateOrderStatus();
+  const { mutate: deleteOrder, isLoading: isDeleting } = useDeleteOrder();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   const userMap: Record<string, string> = Object.fromEntries(
     (usersData ?? []).map((u) => [u.id, u.name])
@@ -70,30 +79,39 @@ export default function OrderDetailScreen() {
 
   const canDelete =
     user?.role === 'Admin' &&
-    order.status !== 'Canceled' &&
+    order.status !== 'Completed' &&
     order.status !== 'Approved';
 
-  const handleCancel = () => {
-    Alert.alert(
-      'Cancelar Ordem',
-      'Tem certeza que deseja cancelar esta ordem de serviço?',
-      [
-        { text: 'Não', style: 'cancel' },
-        {
-          text: 'Sim, cancelar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await updateStatus({ id: order.id, data: { status: 'Canceled' } });
-              refetch();
-              Alert.alert('Cancelado', 'A ordem foi cancelada.');
-            } catch {
-              Alert.alert('Erro', 'Não foi possível cancelar a ordem.');
-            }
-          },
-        },
-      ]
-    );
+  const canEdit =
+    user?.role === 'Admin' &&
+    order.status !== 'Completed' &&
+    order.status !== 'Approved' &&
+    order.status !== 'Rejected' &&
+    order.status !== 'Canceled';
+
+  const handleEdit = () => {
+    router.push({ pathname: '/(app)/orders/edit/[id]', params: { id: order.id } });
+  };
+
+  const handleDelete = async () => {
+    const ok = await confirm({
+      icon: 'assignment',
+      title: 'Excluir Ordem de Serviço?',
+      message:
+        'Você tem certeza que deletará essa Ordem de Serviço? Todos os dados serão perdidos.',
+      confirmLabel: 'Deletar',
+      cancelLabel: 'Cancelar',
+      destructive: true,
+    });
+    if (!ok) return;
+
+    try {
+      await deleteOrder(order.id);
+      showSuccess('Ordem de serviço excluída.');
+      router.replace('/(app)/(tabs)/orders');
+    } catch {
+      showError('Não foi possível excluir a ordem.');
+    }
   };
 
   return (
@@ -181,22 +199,22 @@ export default function OrderDetailScreen() {
         {/* Admin actions */}
         {user?.role === 'Admin' && (
           <View style={styles.actions}>
-            <AppButton
-              label="Editar Ordem"
-              icon="edit"
-              variant="secondary"
-              onPress={() =>
-                Alert.alert('Em breve', 'Função de edição em desenvolvimento.')
-              }
-              fullWidth
-            />
+            {canEdit && (
+              <AppButton
+                label="Editar Ordem"
+                icon="edit"
+                variant="secondary"
+                onPress={handleEdit}
+                fullWidth
+              />
+            )}
             {canDelete && (
               <AppButton
-                label="Cancelar Ordem"
-                icon="cancel"
+                label="Excluir Ordem"
+                icon="delete-outline"
                 variant="danger"
-                onPress={handleCancel}
-                loading={isCanceling}
+                onPress={handleDelete}
+                loading={isDeleting}
                 fullWidth
               />
             )}
