@@ -281,5 +281,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary,
     fontWeight: '600',
+    textAlign: 'center',
   },
 });
