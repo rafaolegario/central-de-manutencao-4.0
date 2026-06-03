@@ -9,6 +9,7 @@ import type {
 } from '@/types/api';
 import {
   createTool,
+  deleteTool,
   editTool,
   getTool,
   listActiveUsages,
@@ -33,6 +34,10 @@ export function useEditTool() {
   return useApiMutation<{ id: string; data: EditToolRequest }, Tool>(
     ({ id, data }) => editTool(id, data)
   );
+}
+
+export function useDeleteTool() {
+  return useApiMutation<string, void>(deleteTool);
 }
 
 export function useWithdrawTool() {
