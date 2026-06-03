@@ -15,12 +15,11 @@ Marque cada item com `[x]` conforme for testando. Registre bugs ou melhorias com
   - **Técnico** — credenciais de técnico
 - [ ] Pelo menos uma ordem de serviço com status `EmAndamento` atribuída ao Técnico (necessário para retirada de ferramentas)
 
-> ⚠️ Algumas seções (1.4, 1.5, 1A) exigem um **banco zerado** para exercitar os fluxos de primeiro acesso. Para resetar: pare a API, rode `docker compose down -v` (ou apague/recrie o volume do Postgres) e reinicie — o `dotnet run` aplica as migrações novamente e o admin semeado é recriado.
+> ⚠️ Algumas seções (1.4, 1.5, 1A) exigem um **banco zerado** para exercitar os fluxos de primeiro acesso. Para resetar: `docker compose down -v && docker compose up --build` — o EF Core recria o schema vazio (sem usuário admin pré-cadastrado).
 
 ### Credenciais de teste
 | Perfil | E-mail | Senha |
 |---|---|---|
-| Admin (semeado) | _(preencher, de `AdminUser:Email`)_ | _(preencher, de `AdminUser:Password`)_ |
 | Admin (auto-cadastro) | _(preencher após rodar a seção 1.4)_ | _(preencher)_ |
 | Técnico (convidado, senha definida) | _(preencher após rodar a seção 1.5)_ | _(preencher)_ |
 | Técnico (convidado, senha AINDA não definida) | _(preencher para testar 1.5)_ | _(nenhuma — usar fluxo de primeiro acesso)_ |
@@ -89,7 +88,6 @@ Marque cada item com `[x]` conforme for testando. Registre bugs ou melhorias com
 - [ ] Enviar com confirmação divergente → "As senhas não coincidem."
 - [ ] Enviar senha válida → usuário é logado automaticamente, cai no Dashboard do técnico
 - [ ] Repetir: deslogar, digitar o mesmo e-mail do técnico → o app vai direto para a **etapa 2 (senha)**, NÃO para set-password (porque `MustSetPassword` agora é `false`)
-- [ ] Tentar usar as credenciais do Admin semeado pela rota antiga `/api/Authenticate/login` funciona normalmente (sem bloqueio de `MustSetPassword` — o admin semeado teve a flag setada como `false` durante a migração)
 
 ### 1.6 Casos de Borda do Email-First
 - [ ] Enviar etapa 1 com e-mail contendo espaços ou letras maiúsculas → servidor normaliza (lowercase + trim); fluxo prossegue corretamente

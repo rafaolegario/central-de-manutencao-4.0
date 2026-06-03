@@ -40,6 +40,17 @@ Na primeira execução o Docker vai baixar as imagens e compilar os projetos —
 Para parar tudo: `docker compose down`
 Para parar e apagar os dados do banco: `docker compose down -v`
 
+### 4. Resetando para um estado limpo (banco zerado)
+
+Útil para exercitar o fluxo de primeira configuração (cadastro do primeiro administrador) ou começar do zero em testes.
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+`-v` remove o volume `postgres_data` (todos os dados do banco), e `--build` garante que a API seja recompilada com o código atual. Na subida, o EF Core recria o schema vazio — nenhum usuário é semeado, então o app mobile mostrará o link **"Primeira configuração? Criar conta de administrador"** na tela de login.
+
 ---
 
 ## Desenvolvimento local (sem Docker)
@@ -69,4 +80,4 @@ Requer [Node.js](https://nodejs.org/) instalado. Use o app [Expo Go](https://exp
 ## Observações
 
 - O app mobile consome a API real via `EXPO_PUBLIC_API_URL` (configurada no `docker-compose.yml`).
-- O usuário admin definido nas variáveis de ambiente é criado automaticamente na primeira inicialização da API.
+- Na primeira execução não há nenhum usuário cadastrado — abra o app e use o link **"Primeira configuração? Criar conta de administrador"** na tela de login para criar o primeiro admin.

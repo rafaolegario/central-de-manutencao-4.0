@@ -15,12 +15,11 @@ Mark each item `[x]` as you test. Note any bug or improvement inline with `> ⚠
   - **Technician** — can log in with technician credentials
 - [ ] At least one service order in `InProgress` status assigned to the Technician (required for tool withdrawal)
 
-> ⚠️ Some sections (1.4, 1.5, 1A) require running against a **fresh database** to exercise first-time flows. To reset: stop the API, run `docker compose down -v` (or drop/recreate the Postgres volume), then restart — `dotnet run` will re-apply migrations and the seed admin.
+> ⚠️ Some sections (1.4, 1.5, 1A) require running against a **fresh database** to exercise first-time flows. To reset: `docker compose down -v && docker compose up --build` — EF Core re-creates the schema empty (no pre-seeded admin user).
 
 ### Test credentials
 | Role | Email | Password |
 |---|---|---|
-| Admin (seeded) | _(fill in, from `AdminUser:Email`)_ | _(fill in, from `AdminUser:Password`)_ |
 | Admin (self-registered) | _(fill in after running section 1.4)_ | _(fill in)_ |
 | Technician (invited, password set) | _(fill in after running section 1.5)_ | _(fill in)_ |
 | Technician (invited, password NOT yet set) | _(fill in for testing 1.5)_ | _(none — must use first-access flow)_ |
@@ -89,7 +88,6 @@ Mark each item `[x]` as you test. Note any bug or improvement inline with `> ⚠
 - [ ] Submit with mismatched confirm → "As senhas não coincidem."
 - [ ] Submit valid password → user is auto-logged in, lands on technician Dashboard
 - [ ] Repeat: log out, enter the same technician email → app routes to **step 2 (password)** directly, NOT to set-password (because `MustSetPassword` is now `false`)
-- [ ] Attempting to use the seeded Admin credentials via the legacy `/api/Authenticate/login` route works normally (no `MustSetPassword` block — the seeded admin had it set to `false` during the migration)
 
 ### 1.6 Email-First Edge Cases
 - [ ] Submit step-1 with email that has trailing whitespace or uppercase characters → server normalises (lowercased + trimmed); flow proceeds correctly
