@@ -57,6 +57,7 @@ namespace central_de_manutencao.Api
             services.AddScoped<IStockItemRepository, StockItemRepository>();
             services.AddScoped<CreateStockItemService>();
             services.AddScoped<EditStockItemService>();
+            services.AddScoped<DeleteStockItemService>();
             services.AddScoped<GetStockItemService>();
             services.AddScoped<ListStockItemsService>();
             services.AddScoped<ReplenishStockService>();
@@ -65,6 +66,7 @@ namespace central_de_manutencao.Api
             services.AddScoped<IToolRepository, ToolRepository>();
             services.AddScoped<CreateToolService>();
             services.AddScoped<EditToolService>();
+            services.AddScoped<DeleteToolService>();
             services.AddScoped<GetToolService>();
             services.AddScoped<ListToolsService>();
             services.AddScoped<WithdrawToolService>();
