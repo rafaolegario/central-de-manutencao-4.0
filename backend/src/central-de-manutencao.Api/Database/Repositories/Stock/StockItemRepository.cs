@@ -26,17 +26,23 @@ public class StockItemRepository : IStockItemRepository
 
     public async Task<StockItem?> GetById(Guid id)
     {
-        return await _context.StockItems.FirstOrDefaultAsync(i => i.Id == id);
+        return await _context.StockItems
+            .Where(i => !i.IsDeleted)
+            .FirstOrDefaultAsync(i => i.Id == id);
     }
 
     public async Task<StockItem?> GetByCode(string code)
     {
-        return await _context.StockItems.FirstOrDefaultAsync(i => i.Code == code);
+        return await _context.StockItems
+            .Where(i => !i.IsDeleted)
+            .FirstOrDefaultAsync(i => i.Code == code);
     }
 
     public async Task<List<StockItem>> List(bool? lowStock)
     {
-        var query = _context.StockItems.AsQueryable();
+        var query = _context.StockItems
+            .Where(i => !i.IsDeleted)
+            .AsQueryable();
 
         if (lowStock == true)
             query = query.Where(i => i.Quantity < i.MinQuantity);
