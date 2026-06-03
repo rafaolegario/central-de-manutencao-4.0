@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,6 +14,7 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { SPECIALTY_LABELS } from '@/constants/labels';
 import { useCreateUser } from '@/services/users/useUsers';
 import type { UserSpecialty } from '@/types/api';
@@ -29,6 +29,7 @@ const SPECIALTIES: UserSpecialty[] = [
 export default function CreateUserScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -64,13 +65,10 @@ export default function CreateUserScreen() {
     if (!validate()) return;
     try {
       await createUser({ name, email, specialty });
-      Alert.alert(
-        'Convite enviado',
-        'O técnico definirá a senha no primeiro acesso usando este e-mail.',
-        [{ text: 'OK', onPress: () => router.back() }],
-      );
+      showSuccess('Convite enviado. O técnico definirá a senha no primeiro acesso.');
+      router.replace('/(app)/(tabs)/users');
     } catch {
-      Alert.alert('Erro', apiError?.message ?? 'Não foi possível criar o usuário.');
+      showError(apiError?.errors?.[0] ?? 'Não foi possível criar o usuário.');
     }
   };
 
