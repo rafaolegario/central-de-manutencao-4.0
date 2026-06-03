@@ -5,6 +5,8 @@ import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ConfirmDialogProvider } from '@/context/ConfirmDialogContext';
+import { ToastProvider } from '@/context/ToastContext';
 
 const AppTheme = {
   ...DefaultTheme,
@@ -40,9 +42,13 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <ThemeProvider value={AppTheme}>
-        <RootNavigator />
-      </ThemeProvider>
+      <ToastProvider>
+        <ConfirmDialogProvider>
+          <ThemeProvider value={AppTheme}>
+            <RootNavigator />
+          </ThemeProvider>
+        </ConfirmDialogProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }
