@@ -8,4 +8,5 @@ public class Tool
     public int TotalQuantity { get; set; }
     public int AvailableQuantity { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public bool IsDeleted { get; set; } = false;
 }
