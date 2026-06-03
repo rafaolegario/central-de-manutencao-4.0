@@ -26,17 +26,23 @@ public class ToolRepository : IToolRepository
 
     public async Task<Tool?> GetById(Guid id)
     {
-        return await _context.Tools.FirstOrDefaultAsync(t => t.Id == id);
+        return await _context.Tools
+            .Where(t => !t.IsDeleted)
+            .FirstOrDefaultAsync(t => t.Id == id);
     }
 
     public async Task<Tool?> GetByCode(string code)
     {
-        return await _context.Tools.FirstOrDefaultAsync(t => t.Code == code);
+        return await _context.Tools
+            .Where(t => !t.IsDeleted)
+            .FirstOrDefaultAsync(t => t.Code == code);
     }
 
     public async Task<List<Tool>> List(bool? available)
     {
-        var query = _context.Tools.AsQueryable();
+        var query = _context.Tools
+            .Where(t => !t.IsDeleted)
+            .AsQueryable();
 
         if (available == true)
             query = query.Where(t => t.AvailableQuantity > 0);
