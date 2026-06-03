@@ -6,5 +6,7 @@ namespace central_de_manutencao.Communication.Requests.ServiceOrder
         public string Description { get; set; } = string.Empty;
         public string? Location { get; set; }
         public string? DueDate { get; set; }
+        public string? Priority { get; set; }
+        public string? TechnicianId { get; set; }
     }
 }
