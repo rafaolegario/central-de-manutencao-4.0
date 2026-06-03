@@ -57,6 +57,18 @@ public class StockController : ControllerBase
         return Ok(response);
     }
 
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(
+        [FromServices] DeleteStockItemService useCase,
+        [FromRoute] Guid id)
+    {
+        await useCase.Execute(id);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/replenish")]
     [ProducesResponseType(typeof(StockItemResponseJson), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
