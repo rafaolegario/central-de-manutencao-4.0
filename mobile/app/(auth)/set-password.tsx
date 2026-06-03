@@ -26,6 +26,7 @@ export default function SetPasswordScreen() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -96,8 +97,10 @@ export default function SetPasswordScreen() {
               label="Confirmar senha"
               value={confirm}
               onChangeText={setConfirm}
-              secureTextEntry={!showPassword}
+              secureTextEntry={!showConfirm}
               leftIcon="lock"
+              rightIcon={showConfirm ? 'visibility-off' : 'visibility'}
+              onRightIconPress={() => setShowConfirm((v) => !v)}
               placeholder="Repita a senha"
             />
 
