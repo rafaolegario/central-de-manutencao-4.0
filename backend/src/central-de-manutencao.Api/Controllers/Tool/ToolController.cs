@@ -61,6 +61,19 @@ public class ToolController : ControllerBase
         return Ok(response);
     }
 
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(
+        [FromServices] DeleteToolService useCase,
+        [FromRoute] Guid id)
+    {
+        await useCase.Execute(id);
+        return NoContent();
+    }
+
     [HttpPost("{id:guid}/withdraw")]
     [Authorize(Roles = "Technician")]
     [ProducesResponseType(typeof(ToolUsageResponseJson), StatusCodes.Status200OK)]
