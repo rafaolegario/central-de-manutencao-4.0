@@ -111,6 +111,7 @@ export interface CreateServiceOrderRequest {
   location?: string;
   priority: string;
   dueDate?: string;
+  technicianId?: string;
 }
 
 export interface CreateServiceOrderResponse {
@@ -129,6 +130,8 @@ export interface EditServiceOrderRequest {
   description?: string;
   location?: string;
   dueDate?: string;
+  priority?: string;
+  technicianId?: string | null;
 }
 
 export interface UpdateServiceOrderStatusRequest {
