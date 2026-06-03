@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,11 +12,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
+import AppSelect, { type AppSelectOption } from '@/components/AppSelect';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { PRIORITY_LABELS } from '@/constants/labels';
+import { useToast } from '@/context/ToastContext';
+import { PRIORITY_LABELS, SPECIALTY_LABELS } from '@/constants/labels';
 import { useCreateOrder } from '@/services/orders/useOrders';
-import type { ServiceOrderPriority } from '@/types/api';
+import { useUsers } from '@/services/users/useUsers';
+import type { ServiceOrderPriority, UserSpecialty } from '@/types/api';
 
 const PRIORITIES: ServiceOrderPriority[] = ['Low', 'Medium', 'High', 'Critical'];
 
@@ -54,15 +56,30 @@ function parseDueDate(input: string): string | undefined {
 export default function CreateOrderScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<ServiceOrderPriority>('Medium');
+  const [technicianId, setTechnicianId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate: createOrder, isLoading: isSubmitting, error: apiError } = useCreateOrder();
+  const { data: usersData } = useUsers({ role: 'Technician', active: true });
+
+  const technicianOptions = useMemo<AppSelectOption[]>(
+    () =>
+      (usersData ?? []).map((u) => ({
+        value: u.id,
+        label: u.name,
+        sublabel: u.specialty
+          ? SPECIALTY_LABELS[u.specialty as UserSpecialty] ?? undefined
+          : undefined,
+      })),
+    [usersData],
+  );
 
   if (user?.role !== 'Admin') {
     return (
@@ -97,12 +114,12 @@ export default function CreateOrderScreen() {
         location: location.trim() || undefined,
         priority,
         dueDate: dueDate ? parseDueDate(dueDate) : undefined,
+        technicianId: technicianId ?? undefined,
       });
-      Alert.alert('Sucesso', 'Ordem de serviço criada com sucesso!', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess('Ordem de serviço criada com sucesso.');
+      router.replace('/(app)/(tabs)/orders');
     } catch {
-      // error is surfaced via apiError state
+      showError(apiError?.errors?.[0] ?? 'Não foi possível criar a ordem.');
     }
   };
 
@@ -161,6 +178,20 @@ export default function CreateOrderScreen() {
             keyboardType="number-pad"
             maxLength={10}
             error={errors.dueDate}
+          />
+
+          <View style={styles.gap} />
+
+          <AppSelect
+            label="Técnico responsável"
+            value={technicianId}
+            onChange={setTechnicianId}
+            options={technicianOptions}
+            placeholder="Não atribuir agora"
+            leftIcon="engineering"
+            nullable
+            nullableLabel="Não atribuir agora"
+            emptyText="Nenhum técnico ativo disponível."
           />
 
           <View style={styles.gap} />
