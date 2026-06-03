@@ -27,8 +27,6 @@ services:
       - "8080:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - AdminUser__Email=${ADMIN_EMAIL}
-      - AdminUser__Password=${ADMIN_PASSWORD}
       - Settings__Jwt__SigningKey=${JWT_SIGNING_KEY}
       - Settings__Jwt__ExpiresMinutes=${JWT_EXPIRES_MINUTES:-60}
       - ASPNETCORE_ENVIRONMENT=Development
