@@ -35,6 +35,12 @@ export function editStockItem(
   });
 }
 
+export function deleteStockItem(id: string): Promise<void> {
+  return apiFetch<void>(`/api/stock/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export function replenishStock(
   id: string,
   data: ReplenishStockRequest
