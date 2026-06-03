@@ -97,10 +97,7 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-
     context.Database.Migrate();
-    DbInitializer.Seed(context, config);
 }
 
 if (!app.Environment.IsDevelopment())
