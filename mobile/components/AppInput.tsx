@@ -28,6 +28,7 @@ export default function AppInput({
   ...rest
 }: AppInputProps) {
   const [focused, setFocused] = useState(false);
+  const isDisabled = rest.editable === false;
 
   const borderColor = error
     ? Colors.error
@@ -38,7 +39,13 @@ export default function AppInput({
   return (
     <View style={styles.wrapper}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <View style={[styles.inputRow, { borderColor }]}>
+      <View
+        style={[
+          styles.inputRow,
+          { borderColor },
+          isDisabled && styles.inputRowDisabled,
+        ]}
+      >
         {leftIcon && (
           <MaterialIcons
             name={leftIcon}
@@ -48,7 +55,7 @@ export default function AppInput({
           />
         )}
         <TextInput
-          style={[styles.input, style]}
+          style={[styles.input, isDisabled && styles.inputDisabled, style]}
           placeholderTextColor={Colors.textMuted}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -100,6 +107,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.textPrimary,
     padding: 0,
+  },
+  inputRowDisabled: {
+    backgroundColor: Colors.surface,
+  },
+  inputDisabled: {
+    color: Colors.textSecondary,
   },
   error: {
     fontSize: 12,
