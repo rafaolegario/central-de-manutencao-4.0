@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using central_de_manutencao.Api.Database.Repositories.ServiceOrders;
+using central_de_manutencao.Api.Database.Repositories.Users;
 using central_de_manutencao.Api.Enums;
 using central_de_manutencao.Api.Exceptions.ExceptionsBase;
 using central_de_manutencao.Api.Models.ServiceOrders;
@@ -12,10 +13,14 @@ namespace central_de_manutencao.Api.Services.ServiceOrder;
 public class CreateServiceOrderService
 {
     private readonly IServiceOrderRepository _serviceOrderRepository;
+    private readonly IUserRepository _userRepository;
 
-    public CreateServiceOrderService(IServiceOrderRepository serviceOrderRepository)
+    public CreateServiceOrderService(
+        IServiceOrderRepository serviceOrderRepository,
+        IUserRepository userRepository)
     {
         _serviceOrderRepository = serviceOrderRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<CreateServiceOrderResponseJson> Execute(CreateServiceOrderRequestJson request, ClaimsPrincipal currentUser)
@@ -31,6 +36,30 @@ public class CreateServiceOrderService
         if (!string.IsNullOrEmpty(request.DueDate) && DateTime.TryParse(request.DueDate, out var parsedDueDate))
             dueDate = parsedDueDate.ToUniversalTime();
 
+        Guid? technicianId = null;
+        DateTime? assignedAt = null;
+        Guid? assignedBy = null;
+        var status = ServiceOrderStatus.Open;
+
+        if (!string.IsNullOrWhiteSpace(request.TechnicianId))
+        {
+            if (!Guid.TryParse(request.TechnicianId, out var techGuid))
+                throw new BadRequestException("ID do técnico inválido.");
+
+            var technician = await _userRepository.GetById(techGuid);
+            if (technician is null)
+                throw new BadRequestException("Técnico não encontrado.");
+            if (!technician.Active)
+                throw new BadRequestException("O técnico informado não está ativo.");
+            if (technician.Role != Roles.Technician)
+                throw new BadRequestException("O usuário informado não é um técnico.");
+
+            technicianId = techGuid;
+            assignedAt = DateTime.UtcNow;
+            assignedBy = currentUserId;
+            status = ServiceOrderStatus.Assigned;
+        }
+
         var order = new Models.ServiceOrders.ServiceOrder
         {
             Id = Guid.NewGuid(),
@@ -38,8 +67,11 @@ public class CreateServiceOrderService
             Description = request.Description,
             Location = request.Location,
             Priority = priority,
-            Status = ServiceOrderStatus.Open,
+            Status = status,
             CreatedBy = currentUserId,
+            TechnicianId = technicianId,
+            AssignedAt = assignedAt,
+            AssignedBy = assignedBy,
             DueDate = dueDate,
             IsDeleted = false,
         };
