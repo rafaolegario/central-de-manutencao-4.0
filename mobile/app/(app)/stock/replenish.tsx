@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,12 +15,14 @@ import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useReplenishStock, useStockItem } from '@/services/stock/useStock';
 
 export default function ReplenishStockScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { showSuccess, showError } = useToast();
 
   const { data: item, isLoading: isLoadingItem } = useStockItem(id);
   const { mutate: replenish, isLoading: isSubmitting, error: apiError } = useReplenishStock();
@@ -80,11 +81,10 @@ export default function ReplenishStockScreen() {
 
     try {
       const updated = await replenish({ id: item.id, data: { quantity, note: note.trim() || undefined } });
-      Alert.alert('Sucesso', `Estoque atualizado para ${updated.quantity} unidades.`, [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess(`Estoque atualizado para ${updated.quantity} unidades.`);
+      router.back();
     } catch {
-      Alert.alert('Erro', apiError?.message ?? 'Não foi possível reabastecer o estoque.');
+      showError(apiError?.errors?.[0] ?? 'Não foi possível reabastecer o estoque.');
     }
   };
 
