@@ -32,6 +32,12 @@ export function editTool(id: string, data: EditToolRequest): Promise<Tool> {
   });
 }
 
+export function deleteTool(id: string): Promise<void> {
+  return apiFetch<void>(`/api/tools/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export function withdrawTool(
   toolId: string,
   data: WithdrawToolRequest
