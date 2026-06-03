@@ -3,7 +3,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,17 +14,22 @@ import AppButton from '@/components/AppButton';
 import MetaRow from '@/components/MetaRow';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useConfirm } from '@/context/ConfirmDialogContext';
+import { useToast } from '@/context/ToastContext';
 import { formatDate, formatDateTime } from '@/utils/format';
 import { useOrders } from '@/services/orders/useOrders';
-import { useReturnTool, useTool } from '@/services/tools/useTools';
+import { useDeleteTool, useReturnTool, useTool } from '@/services/tools/useTools';
 
 export default function ToolDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { confirm } = useConfirm();
+  const { showSuccess, showError } = useToast();
 
   const { data: tool, isLoading, error, refetch } = useTool(id);
   const { mutate: doReturn, isLoading: isReturning } = useReturnTool();
+  const { mutate: deleteTool, isLoading: isDeleting } = useDeleteTool();
   const { data: inProgressOrders } = useOrders({
     status: 'InProgress',
     technicianId: user?.id,
@@ -80,26 +84,49 @@ export default function ToolDetailScreen() {
     router.push({ pathname: '/(app)/tools/withdraw', params: { toolId: tool.id } });
   };
 
-  const handleReturn = (usageId: string, toolName: string) => {
-    Alert.alert(
-      'Devolver ferramenta',
-      `Confirmar devolução de "${toolName}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Devolver',
-          onPress: async () => {
-            try {
-              await doReturn(usageId);
-              refetch();
-              Alert.alert('Sucesso', 'Ferramenta devolvida com sucesso.');
-            } catch {
-              Alert.alert('Erro', 'Não foi possível devolver a ferramenta.');
-            }
-          },
-        },
-      ]
-    );
+  const handleReturn = async (usageId: string, toolName: string) => {
+    const ok = await confirm({
+      icon: 'input',
+      title: 'Devolver ferramenta?',
+      message: `Confirmar devolução de "${toolName}".`,
+      confirmLabel: 'Devolver',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
+    try {
+      await doReturn(usageId);
+      refetch();
+      showSuccess('Ferramenta devolvida.');
+    } catch {
+      showError('Não foi possível devolver a ferramenta.');
+    }
+  };
+
+  const handleEdit = () => {
+    router.push({ pathname: '/(app)/tools/edit/[id]', params: { id: tool!.id } });
+  };
+
+  const handleDelete = async () => {
+    const ok = await confirm({
+      icon: 'build',
+      title: 'Excluir Ferramenta?',
+      message:
+        'Você tem certeza que deletará essa ferramenta? Todos os dados serão perdidos.',
+      confirmLabel: 'Deletar',
+      cancelLabel: 'Cancelar',
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteTool(tool!.id);
+      showSuccess('Ferramenta excluída.');
+      router.replace('/(app)/(tabs)/inventory');
+    } catch (err) {
+      const message =
+        (err as { errors?: string[] })?.errors?.[0] ??
+        'Não foi possível excluir a ferramenta.';
+      showError(message);
+    }
   };
 
   return (
@@ -224,15 +251,23 @@ export default function ToolDetailScreen() {
             </>
           )}
           {isAdmin && (
-            <AppButton
-              label="Editar Ferramenta"
-              icon="edit"
-              variant="secondary"
-              onPress={() =>
-                Alert.alert('Em breve', 'Função de edição em desenvolvimento.')
-              }
-              fullWidth
-            />
+            <>
+              <AppButton
+                label="Editar Ferramenta"
+                icon="edit"
+                variant="secondary"
+                onPress={handleEdit}
+                fullWidth
+              />
+              <AppButton
+                label="Excluir Ferramenta"
+                icon="delete-outline"
+                variant="danger"
+                onPress={handleDelete}
+                loading={isDeleting}
+                fullWidth
+              />
+            </>
           )}
         </View>
       </ScrollView>
