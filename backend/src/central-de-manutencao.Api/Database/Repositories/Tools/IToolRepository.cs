@@ -12,6 +12,7 @@ public interface IToolRepository
     Task<ToolUsage?> GetUsageById(Guid usageId);
     Task<List<ToolUsage>> GetOpenUsagesByToolId(Guid toolId);
     Task<List<ToolUsage>> GetAllActiveUsages();
+    Task<List<ToolUsage>> GetUsagesByTechnicianId(Guid technicianId);
     Task WithdrawTool(Tool tool, ToolUsage usage);
     Task ReturnTool(Tool tool, ToolUsage usage);
 }
