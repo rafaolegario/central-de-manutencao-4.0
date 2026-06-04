@@ -9,6 +9,7 @@ namespace central_de_manutencao.Api.Database.Repositories.Users
         Task Delete(User user);
         Task Update(User user);
         Task<User?> GetById(Guid id);
+        Task<List<User>> GetByIds(IEnumerable<Guid> ids);
         Task<User?> GetByEmail(string email);
         Task<List<User>> List(Roles? role, Specialties? specialty, bool? active);
     }
