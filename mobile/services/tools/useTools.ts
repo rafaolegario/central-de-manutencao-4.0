@@ -13,6 +13,7 @@ import {
   editTool,
   getTool,
   listActiveUsages,
+  listMyUsages,
   listTools,
   returnTool,
   withdrawTool,
@@ -52,4 +53,8 @@ export function useReturnTool() {
 
 export function useActiveUsages() {
   return useApiQuery<ActiveToolUsageListResponse>(listActiveUsages);
+}
+
+export function useMyToolUsages() {
+  return useApiQuery<ActiveToolUsageListResponse>(listMyUsages);
 }
