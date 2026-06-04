@@ -38,6 +38,7 @@ export default function InventoryScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
+  const isAdmin = user?.role === 'Admin';
   const [segment, setSegment] = useState<Segment>('tools');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('all');
   const [stockFilter, setStockFilter] = useState<StockFilter>('all');
@@ -51,20 +52,6 @@ export default function InventoryScreen() {
       refetchStock();
     }, [refetchTools, refetchStock])
   );
-
-  if (user?.role !== 'Admin') {
-    return (
-      <SafeAreaView style={styles.safe} edges={['bottom']}>
-        <View style={styles.restricted}>
-          <Text style={styles.restrictedIcon}>🔒</Text>
-          <Text style={styles.restrictedTitle}>Acesso Restrito</Text>
-          <Text style={styles.restrictedSub}>
-            Apenas administradores podem acessar o inventário.
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   const filteredTools = (tools ?? []).filter((t) => {
     if (toolFilter === 'available') return t.availableQuantity === t.totalQuantity;
@@ -99,30 +86,34 @@ export default function InventoryScreen() {
             <Text style={styles.countText}>{count}</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={handleCreate}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="add" size={22} color={Colors.white} />
-        </TouchableOpacity>
+        {isAdmin && (
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={handleCreate}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="add" size={22} color={Colors.white} />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Segmented control */}
-      <View style={styles.segment}>
-        <SegmentButton
-          label="Ferramentas"
-          icon="build"
-          active={segment === 'tools'}
-          onPress={() => setSegment('tools')}
-        />
-        <SegmentButton
-          label="Estoque"
-          icon="inventory"
-          active={segment === 'stock'}
-          onPress={() => setSegment('stock')}
-        />
-      </View>
+      {/* Segmented control — admins only */}
+      {isAdmin && (
+        <View style={styles.segment}>
+          <SegmentButton
+            label="Ferramentas"
+            icon="build"
+            active={segment === 'tools'}
+            onPress={() => setSegment('tools')}
+          />
+          <SegmentButton
+            label="Estoque"
+            icon="inventory"
+            active={segment === 'stock'}
+            onPress={() => setSegment('stock')}
+          />
+        </View>
+      )}
 
       {/* Filter chips */}
       <View style={styles.chipsWrapper}>
