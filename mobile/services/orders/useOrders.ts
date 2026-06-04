@@ -7,6 +7,7 @@ import type {
   OrderListParams,
   PaginatedResponse,
   ServiceOrder,
+  ServiceOrderLog,
   UpdateServiceOrderStatusRequest,
 } from '@/types/api';
 import {
@@ -14,6 +15,7 @@ import {
   deleteOrder,
   editOrder,
   getOrder,
+  getOrderLogs,
   listOrders,
   updateOrderStatus,
 } from './orderService';
@@ -27,6 +29,10 @@ export function useOrders(params?: OrderListParams) {
 
 export function useOrder(id: string) {
   return useApiQuery<ServiceOrder>(() => getOrder(id), [id]);
+}
+
+export function useOrderLogs(id: string) {
+  return useApiQuery<ServiceOrderLog[]>(() => getOrderLogs(id), [id]);
 }
 
 export function useCreateOrder() {
