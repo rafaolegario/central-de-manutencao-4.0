@@ -16,12 +16,11 @@ import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { STATUS_LABELS } from '@/constants/labels';
 import { useOrders } from '@/services/orders/useOrders';
-import { useUsers } from '@/services/users/useUsers';
 import type { ServiceOrderStatus } from '@/types/api';
 
 type FilterOption = 'all' | ServiceOrderStatus;
 
-const FILTERS: { key: FilterOption; label: string }[] = [
+const ADMIN_FILTERS: { key: FilterOption; label: string }[] = [
   { key: 'all', label: 'Todas' },
   { key: 'Open', label: STATUS_LABELS.Open },
   { key: 'Assigned', label: STATUS_LABELS.Assigned },
@@ -34,19 +33,28 @@ const FILTERS: { key: FilterOption; label: string }[] = [
   { key: 'Canceled', label: STATUS_LABELS.Canceled },
 ];
 
+const TECH_FILTERS: { key: FilterOption; label: string }[] = [
+  { key: 'all', label: 'Todas' },
+  { key: 'Open', label: STATUS_LABELS.Open },
+  { key: 'Assigned', label: STATUS_LABELS.Assigned },
+  { key: 'InProgress', label: STATUS_LABELS.InProgress },
+];
+
 export default function OrdersScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [selected, setSelected] = useState<FilterOption>('all');
 
+  const isTechnician = user?.role === 'Technician';
+  const filters = isTechnician ? TECH_FILTERS : ADMIN_FILTERS;
+
+  const technicianId =
+    isTechnician && selected === 'Assigned' ? user?.id : undefined;
+
   const { data, isLoading, error, refetch } = useOrders({
     status: selected === 'all' ? undefined : selected,
+    technicianId,
   });
-  const { data: usersData } = useUsers();
-
-  const userMap: Record<string, string> = Object.fromEntries(
-    (usersData ?? []).map((u) => [u.id, u.name])
-  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -76,7 +84,7 @@ export default function OrdersScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chips}
         >
-          {FILTERS.map((f) => (
+          {filters.map((f) => (
             <TouchableOpacity
               key={f.key}
               style={[styles.chip, selected === f.key && styles.chipActive]}
@@ -112,7 +120,7 @@ export default function OrdersScreen() {
         renderItem={({ item }) => (
           <ServiceOrderCard
             order={item}
-            technicianName={item.technicianId ? (userMap[item.technicianId] ?? 'Não atribuído') : 'Não atribuído'}
+            technicianName={item.technicianName ?? 'Não atribuído'}
             onPress={() =>
               router.push({ pathname: '/(app)/orders/[id]', params: { id: item.id } })
             }
