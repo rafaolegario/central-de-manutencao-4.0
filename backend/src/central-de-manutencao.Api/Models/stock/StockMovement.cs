@@ -9,6 +9,7 @@ public class StockMovement
     public StockMovementType Type { get; set; }
     public int Quantity { get; set; }
     public Guid? WorkOrderId { get; set; }
+    public Guid? CreatedBy { get; set; }
     public string? Note { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
