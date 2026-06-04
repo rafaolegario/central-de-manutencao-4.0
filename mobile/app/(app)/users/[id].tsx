@@ -152,7 +152,7 @@ export default function UserDetailScreen() {
                 { color: targetUser.active ? Colors.success : Colors.textMuted },
               ]}
             >
-              {targetUser.active ? 'Ativo' : 'Inativo'}
+              {targetUser.active ? 'Ativo' : 'Desativado'}
             </Text>
           </View>
         </View>
