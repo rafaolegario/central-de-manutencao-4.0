@@ -6,6 +6,7 @@ import type {
   OrderListParams,
   PaginatedResponse,
   ServiceOrder,
+  ServiceOrderLog,
   UpdateServiceOrderStatusRequest,
 } from '@/types/api';
 
@@ -54,4 +55,8 @@ export function updateOrderStatus(
     method: 'PATCH',
     body: data,
   });
+}
+
+export function getOrderLogs(id: string): Promise<ServiceOrderLog[]> {
+  return apiFetch<ServiceOrderLog[]>(`/api/ServiceOrder/${id}/logs`);
 }
