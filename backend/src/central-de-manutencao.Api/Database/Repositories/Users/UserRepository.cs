@@ -36,6 +36,12 @@ namespace central_de_manutencao.Api.Database.Repositories.Users
             return await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
         }
 
+        public async Task<List<User>> GetByIds(IEnumerable<Guid> ids)
+        {
+            var idList = ids.Distinct().ToList();
+            return await _context.Users.Where(u => idList.Contains(u.Id)).ToListAsync();
+        }
+
         public async Task<User?> GetByEmail(string email)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
