@@ -100,9 +100,23 @@ export interface ServiceOrder {
   priority: ServiceOrderPriority;
   status: ServiceOrderStatus;
   technicianId: string | null;
+  technicianName: string | null;
   createdBy: string;
+  createdByName: string | null;
   assignedBy: string | null;
+  assignedByName: string | null;
   completionNotes: string | null;
+}
+
+export interface ServiceOrderLog {
+  id: string;
+  serviceOrderId: string;
+  oldStatus: ServiceOrderStatus;
+  newStatus: ServiceOrderStatus;
+  changedAt: string;
+  changedBy: string;
+  changedByName: string | null;
+  description: string | null;
 }
 
 export interface CreateServiceOrderRequest {
@@ -224,11 +238,26 @@ export interface ReplenishStockRequest {
   note?: string;
 }
 
+export interface ConsumeStockRequest {
+  quantity: string;
+  note?: string;
+}
+
 export interface StockMovement {
   id: string;
   type: StockMovementType;
   quantity: number;
   workOrderId: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface MyStockMovement {
+  id: string;
+  stockItemId: string;
+  stockItemCode: string | null;
+  stockItemName: string | null;
+  quantity: number;
   note: string | null;
   createdAt: string;
 }
