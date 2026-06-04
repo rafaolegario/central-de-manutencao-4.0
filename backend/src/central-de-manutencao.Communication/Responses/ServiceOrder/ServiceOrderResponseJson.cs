@@ -16,8 +16,11 @@ namespace central_de_manutencao.Communication.Responses.ServiceOrder
         public string Priority { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string? TechnicianId { get; set; }
+        public string? TechnicianName { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
+        public string? CreatedByName { get; set; }
         public string? AssignedBy { get; set; }
+        public string? AssignedByName { get; set; }
         public string? CompletionNotes { get; set; }
     }
 }
