@@ -39,7 +39,7 @@ namespace central_de_manutencao.Api.Services.Auth
 
             if (user.Active == false)
             {
-                throw new Exception("Usuário inativo. Contate o administrador.");
+                throw new UnprocessableEntityException("Usuário inativo. Contate o administrador.");
             }
 
             var token = _tokenGenerator.Generate(user);
@@ -65,8 +65,8 @@ namespace central_de_manutencao.Api.Services.Auth
 
             if (!result.IsValid)
             {
-                var errors = result.Errors.Select(e => e.ErrorMessage).ToList();
-                throw new Exception(string.Join("; ", errors));
+                // Avoid leaking validation specifics (e.g. password length) on login.
+                throw new UnprocessableEntityException("Usuário ou senha incorretos.");
             }
 
 
