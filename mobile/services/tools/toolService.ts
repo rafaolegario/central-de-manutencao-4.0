@@ -57,3 +57,7 @@ export function returnTool(usageId: string): Promise<ToolUsage> {
 export function listActiveUsages(): Promise<ActiveToolUsageListResponse> {
   return apiFetch<ActiveToolUsageListResponse>('/api/tools/usage/active');
 }
+
+export function listMyUsages(): Promise<ActiveToolUsageListResponse> {
+  return apiFetch<ActiveToolUsageListResponse>('/api/tools/usage/mine');
+}
