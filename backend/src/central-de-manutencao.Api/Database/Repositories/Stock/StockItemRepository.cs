@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using central_de_manutencao.Api.Enums;
 using central_de_manutencao.Api.Models.Stock;
 
 namespace central_de_manutencao.Api.Database.Repositories.Stock;
@@ -71,5 +72,13 @@ public class StockItemRepository : IStockItemRepository
             .ToListAsync();
 
         return (items, totalCount);
+    }
+
+    public async Task<List<StockMovement>> GetOutMovementsByUser(Guid userId)
+    {
+        return await _context.StockMovements
+            .Where(m => m.CreatedBy == userId && m.Type == StockMovementType.Out)
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync();
     }
 }
