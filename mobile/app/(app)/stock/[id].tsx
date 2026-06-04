@@ -22,26 +22,13 @@ export default function StockDetailScreen() {
   const { data: item, isLoading, error, refetch } = useStockItem(id);
   const { mutate: deleteStockItem, isLoading: isDeleting } = useDeleteStockItem();
 
+  const isAdmin = user?.role === 'Admin';
+
   useFocusEffect(
     useCallback(() => {
       refetch();
     }, [refetch])
   );
-
-  if (user?.role !== 'Admin') {
-    return (
-      <SafeAreaView style={styles.safe} edges={['bottom']}>
-        <View style={styles.restricted}>
-          <Text style={styles.restrictedIcon}>🔒</Text>
-          <Text style={styles.restrictedTitle}>Acesso Restrito</Text>
-          <Text style={styles.restrictedSub}>
-            Apenas administradores podem acessar o estoque.
-          </Text>
-          <AppButton label="Voltar" onPress={() => router.back()} variant="ghost" />
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -147,45 +134,64 @@ export default function StockDetailScreen() {
 
         {/* Actions */}
         <View style={styles.actions}>
-          <AppButton
-            label="Reabastecer"
-            icon="add-box"
-            variant="primary"
-            onPress={() =>
-              router.push({
-                pathname: '/(app)/stock/replenish',
-                params: { id: item.id },
-              })
-            }
-            fullWidth
-          />
-          <AppButton
-            label="Ver movimentações"
-            icon="history"
-            variant="secondary"
-            onPress={() =>
-              router.push({
-                pathname: '/(app)/stock/movements',
-                params: { id: item.id },
-              })
-            }
-            fullWidth
-          />
-          <AppButton
-            label="Editar item"
-            icon="edit"
-            variant="secondary"
-            onPress={handleEdit}
-            fullWidth
-          />
-          <AppButton
-            label="Excluir Item"
-            icon="delete-outline"
-            variant="danger"
-            onPress={handleDelete}
-            loading={isDeleting}
-            fullWidth
-          />
+          {!isAdmin && (
+            <AppButton
+              label="Retirar do estoque"
+              icon="output"
+              variant="primary"
+              onPress={() =>
+                router.push({
+                  pathname: '/(app)/stock/consume',
+                  params: { id: item.id },
+                })
+              }
+              disabled={item.quantity === 0}
+              fullWidth
+            />
+          )}
+          {isAdmin && (
+            <>
+              <AppButton
+                label="Reabastecer"
+                icon="add-box"
+                variant="primary"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/stock/replenish',
+                    params: { id: item.id },
+                  })
+                }
+                fullWidth
+              />
+              <AppButton
+                label="Ver movimentações"
+                icon="history"
+                variant="secondary"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/stock/movements',
+                    params: { id: item.id },
+                  })
+                }
+                fullWidth
+              />
+              <AppButton
+                label="Editar item"
+                icon="edit"
+                variant="secondary"
+                onPress={handleEdit}
+                fullWidth
+              />
+              <AppButton
+                label="Excluir Item"
+                icon="delete-outline"
+                variant="danger"
+                onPress={handleDelete}
+                loading={isDeleting}
+                fullWidth
+              />
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
