@@ -111,4 +111,14 @@ public class ToolController : ControllerBase
         var response = await useCase.Execute();
         return Ok(response);
     }
+
+    [HttpGet("usage/mine")]
+    [Authorize(Roles = "Technician")]
+    [ProducesResponseType(typeof(ActiveToolUsageListResponseJson), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListMyUsages(
+        [FromServices] ListTechnicianToolUsagesService useCase)
+    {
+        var response = await useCase.Execute(User);
+        return Ok(response);
+    }
 }
