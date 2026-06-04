@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AccountDisabledDialog from '@/components/AccountDisabledDialog';
 import AppButton from '@/components/AppButton';
 import AppInput from '@/components/AppInput';
 import { Colors } from '@/constants/theme';
@@ -26,6 +27,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [accountDisabled, setAccountDisabled] = useState(false);
 
   const handleEmailSubmit = async () => {
     if (!email.trim()) {
@@ -78,7 +80,12 @@ export default function LoginScreen() {
     const result = await login(email, password);
     setIsLoading(false);
     if (!result.success) {
-      setError(result.error ?? 'Erro ao fazer login.');
+      const msg = result.error ?? 'Erro ao fazer login.';
+      if (msg.toLowerCase().includes('inativo')) {
+        setAccountDisabled(true);
+      } else {
+        setError(msg);
+      }
     }
     // On success, root layout handles redirect.
   };
@@ -202,6 +209,10 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <AccountDisabledDialog
+        visible={accountDisabled}
+        onClose={() => setAccountDisabled(false)}
+      />
     </SafeAreaView>
   );
 }
