@@ -11,133 +11,235 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import StockCard from '@/components/StockCard';
 import ToolCard from '@/components/ToolCard';
 import { Colors } from '@/constants/theme';
-import { useAuth } from '@/context/AuthContext';
-import { useActiveUsages, useTools } from '@/services/tools/useTools';
+import { useStockItems } from '@/services/stock/useStock';
+import { useTools } from '@/services/tools/useTools';
 
-type ToolFilter = 'all' | 'available' | 'mine';
+type Segment = 'tools' | 'stock';
+type ToolFilter = 'all' | 'available';
 
 const FILTERS: { key: ToolFilter; label: string }[] = [
   { key: 'all', label: 'Todas' },
   { key: 'available', label: 'Disponíveis' },
-  { key: 'mine', label: 'Minhas retiradas' },
 ];
 
 export default function TechnicianToolsScreen() {
-  const { user } = useAuth();
   const router = useRouter();
 
+  const [segment, setSegment] = useState<Segment>('tools');
   const [selected, setSelected] = useState<ToolFilter>('all');
 
   const { data: tools, isLoading, error, refetch } = useTools();
-  const { data: activeUsagesData, refetch: refetchUsages } = useActiveUsages();
+  const {
+    data: stockItems,
+    isLoading: isLoadingStock,
+    error: stockError,
+    refetch: refetchStock,
+  } = useStockItems();
 
   useFocusEffect(
     useCallback(() => {
       refetch();
-      refetchUsages();
-    }, [refetch, refetchUsages])
+      refetchStock();
+    }, [refetch, refetchStock])
   );
-
-  const mineToolIds = user
-    ? new Set(
-        (activeUsagesData?.items ?? [])
-          .filter((u) => u.technicianId === user.id)
-          .map((u) => u.toolId)
-      )
-    : new Set<string>();
 
   const filtered = (tools ?? []).filter((t) => {
     if (selected === 'available') return t.availableQuantity > 0;
-    if (selected === 'mine') return mineToolIds.has(t.id);
     return true;
   });
+
+  const count = segment === 'tools' ? filtered.length : (stockItems ?? []).length;
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.title}>Ferramentas</Text>
+          <Text style={styles.title}>Empréstimos</Text>
           <View style={styles.countBadge}>
-            <Text style={styles.countText}>{filtered.length}</Text>
+            <Text style={styles.countText}>{count}</Text>
           </View>
         </View>
-      </View>
-
-      {/* Filter chips */}
-      <View style={styles.chipsWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chips}
+        <TouchableOpacity
+          style={styles.eyeBtn}
+          onPress={() => router.push('/(app)/tools/my-borrows')}
+          activeOpacity={0.8}
+          accessibilityLabel="Minhas retiradas"
         >
-          {FILTERS.map((f) => (
-            <TouchableOpacity
-              key={f.key}
-              style={[styles.chip, selected === f.key && styles.chipActive]}
-              onPress={() => setSelected(f.key)}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  selected === f.key && styles.chipTextActive,
-                ]}
-              >
-                {f.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <MaterialIcons name="visibility" size={22} color={Colors.primary} />
+        </TouchableOpacity>
       </View>
 
-      {/* Error banner */}
-      {error && (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>Erro ao carregar ferramentas</Text>
-          <TouchableOpacity onPress={refetch}>
-            <Text style={styles.retryText}>Tentar novamente</Text>
-          </TouchableOpacity>
+      {/* Segmented control */}
+      <View style={styles.segment}>
+        <SegmentButton
+          label="Ferramentas"
+          icon="build"
+          active={segment === 'tools'}
+          onPress={() => setSegment('tools')}
+        />
+        <SegmentButton
+          label="Estoque"
+          icon="inventory"
+          active={segment === 'stock'}
+          onPress={() => setSegment('stock')}
+        />
+      </View>
+
+      {/* Tool filter chips (tools segment only) */}
+      {segment === 'tools' && (
+        <View style={styles.chipsWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}
+          >
+            {FILTERS.map((f) => (
+              <TouchableOpacity
+                key={f.key}
+                style={[styles.chip, selected === f.key && styles.chipActive]}
+                onPress={() => setSelected(f.key)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    selected === f.key && styles.chipTextActive,
+                  ]}
+                >
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
 
       {/* List */}
-      <FlatList
-        style={styles.list}
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <ToolCard
-            tool={item}
-            onPress={() =>
-              router.push({
-                pathname: '/(app)/tools/[id]',
-                params: { id: item.id },
-              })
+      {segment === 'tools' ? (
+        <>
+          {error && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>Erro ao carregar ferramentas</Text>
+              <TouchableOpacity onPress={refetch}>
+                <Text style={styles.retryText}>Tentar novamente</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <FlatList
+            key="tools-list"
+            style={styles.list}
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+              <ToolCard
+                tool={item}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/tools/[id]',
+                    params: { id: item.id },
+                  })
+                }
+              />
+            )}
+            ListHeaderComponent={
+              isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color={Colors.primary} />
+                </View>
+              ) : null
             }
+            ListEmptyComponent={
+              !isLoading ? (
+                <View style={styles.empty}>
+                  <MaterialIcons name="build" size={64} color={Colors.textMuted} />
+                  <Text style={styles.emptyText}>Nenhuma ferramenta encontrada</Text>
+                </View>
+              ) : null
+            }
+            showsVerticalScrollIndicator={false}
           />
-        )}
-        ListHeaderComponent={
-          isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator color={Colors.primary} />
+        </>
+      ) : (
+        <>
+          {stockError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>Erro ao carregar estoque</Text>
+              <TouchableOpacity onPress={refetchStock}>
+                <Text style={styles.retryText}>Tentar novamente</Text>
+              </TouchableOpacity>
             </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          !isLoading ? (
-            <View style={styles.empty}>
-              <MaterialIcons name="build" size={64} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>Nenhuma ferramenta encontrada</Text>
-            </View>
-          ) : null
-        }
-        showsVerticalScrollIndicator={false}
-      />
+          )}
+          <FlatList
+            key="stock-list"
+            style={styles.list}
+            data={stockItems ?? []}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+              <StockCard
+                item={item}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(app)/stock/[id]',
+                    params: { id: item.id },
+                  })
+                }
+              />
+            )}
+            ListHeaderComponent={
+              isLoadingStock ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator color={Colors.primary} />
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={
+              !isLoadingStock ? (
+                <View style={styles.empty}>
+                  <MaterialIcons name="inventory" size={64} color={Colors.textMuted} />
+                  <Text style={styles.emptyText}>Nenhum item encontrado</Text>
+                </View>
+              ) : null
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        </>
+      )}
     </SafeAreaView>
+  );
+}
+
+function SegmentButton({
+  label,
+  icon,
+  active,
+  onPress,
+}: {
+  label: string;
+  icon: React.ComponentProps<typeof MaterialIcons>['name'];
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.segmentBtn, active && styles.segmentBtnActive]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
+      <MaterialIcons
+        name={icon}
+        size={18}
+        color={active ? Colors.white : Colors.textSecondary}
+      />
+      <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -174,6 +276,46 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: Colors.primary,
+  },
+  eyeBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segment: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 4,
+  },
+  segmentBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 9,
+  },
+  segmentBtnActive: {
+    backgroundColor: Colors.primary,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  segmentTextActive: {
+    color: Colors.white,
+    fontWeight: '700',
   },
   chipsWrapper: {
     overflow: 'hidden',
