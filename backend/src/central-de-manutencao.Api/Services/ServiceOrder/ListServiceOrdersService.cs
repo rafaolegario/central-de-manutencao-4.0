@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using central_de_manutencao.Api.Database.Repositories.ServiceOrders;
+using central_de_manutencao.Api.Database.Repositories.Users;
 using central_de_manutencao.Api.Enums;
 using central_de_manutencao.Communication.Responses.ServiceOrder;
 
@@ -8,10 +9,14 @@ namespace central_de_manutencao.Api.Services.ServiceOrder;
 public class ListServiceOrdersService
 {
     private readonly IServiceOrderRepository _serviceOrderRepository;
+    private readonly IUserRepository _userRepository;
 
-    public ListServiceOrdersService(IServiceOrderRepository serviceOrderRepository)
+    public ListServiceOrdersService(
+        IServiceOrderRepository serviceOrderRepository,
+        IUserRepository userRepository)
     {
         _serviceOrderRepository = serviceOrderRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<ServiceOrderListResponseJson> Execute(
@@ -68,6 +73,17 @@ public class ListServiceOrdersService
             page,
             pageSize);
 
+        var ids = new List<Guid>();
+        foreach (var o in items)
+        {
+            ids.Add(o.CreatedBy);
+            if (o.TechnicianId.HasValue) ids.Add(o.TechnicianId.Value);
+            if (o.AssignedBy.HasValue) ids.Add(o.AssignedBy.Value);
+        }
+
+        var users = await _userRepository.GetByIds(ids);
+        var nameById = users.ToDictionary(u => u.Id, u => u.Name);
+
         return new ServiceOrderListResponseJson
         {
             Items = items.Select(o => new ServiceOrderResponseJson
@@ -86,8 +102,11 @@ public class ListServiceOrdersService
                 Priority = o.Priority.ToString(),
                 Status = o.Status.ToString(),
                 TechnicianId = o.TechnicianId?.ToString(),
+                TechnicianName = o.TechnicianId.HasValue && nameById.TryGetValue(o.TechnicianId.Value, out var techName) ? techName : null,
                 CreatedBy = o.CreatedBy.ToString(),
+                CreatedByName = nameById.TryGetValue(o.CreatedBy, out var creatorName) ? creatorName : null,
                 AssignedBy = o.AssignedBy?.ToString(),
+                AssignedByName = o.AssignedBy.HasValue && nameById.TryGetValue(o.AssignedBy.Value, out var assignerName) ? assignerName : null,
                 CompletionNotes = o.CompletionNotes,
             }).ToList(),
             Page = page,
