@@ -1,5 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import React from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
@@ -12,14 +13,57 @@ import { getInitials } from '@/utils/format';
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
 
-  const { data: assignedData, isLoading: isLoadingAssigned } = useOrders(
-    user ? { technicianId: user.id } : undefined
+  // The list endpoint scopes results by role automatically: technicians always
+  // get only their own orders, admins get everything. pageSize:1 keeps payloads
+  // small — we only read totalCount.
+  const { data: allData, isLoading: loadingAll, refetch: refetchAll } = useOrders({
+    pageSize: 1,
+  });
+  const {
+    data: inProgressData,
+    isLoading: loadingInProgress,
+    refetch: refetchInProgress,
+  } = useOrders({
+    status: 'InProgress',
+    pageSize: 1,
+  });
+  const {
+    data: completedData,
+    isLoading: loadingCompleted,
+    refetch: refetchCompleted,
+  } = useOrders({
+    status: 'Completed',
+    pageSize: 1,
+  });
+  const {
+    data: approvedData,
+    isLoading: loadingApproved,
+    refetch: refetchApproved,
+  } = useOrders({
+    status: 'Approved',
+    pageSize: 1,
+  });
+
+  // Tab screens stay mounted, so re-fetch counts each time Perfil regains focus.
+  useFocusEffect(
+    useCallback(() => {
+      refetchAll();
+      refetchInProgress();
+      refetchCompleted();
+      refetchApproved();
+    }, [refetchAll, refetchInProgress, refetchCompleted, refetchApproved])
   );
 
   if (!user) return null;
 
+  const isAdmin = user.role === 'Admin';
   const initials = getInitials(user.name);
-  const ordersAssigned = assignedData?.totalCount ?? 0;
+
+  const totalCount = allData?.totalCount ?? 0;
+  const inProgressCount = inProgressData?.totalCount ?? 0;
+  const completedCount =
+    (completedData?.totalCount ?? 0) + (approvedData?.totalCount ?? 0);
+  const firstLabel = isAdmin ? 'Total' : 'Atribuídas a mim';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -62,14 +106,19 @@ export default function ProfileScreen() {
         <View style={styles.statsCard}>
           <Text style={styles.statsTitle}>Atividade</Text>
           <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              {isLoadingAssigned ? (
-                <ActivityIndicator color={Colors.primary} />
-              ) : (
-                <Text style={styles.statValue}>{ordersAssigned}</Text>
-              )}
-              <Text style={styles.statLabel}>Atribuídas a mim</Text>
-            </View>
+            <StatItem loading={loadingAll} value={totalCount} label={firstLabel} />
+            <View style={styles.statDivider} />
+            <StatItem
+              loading={loadingInProgress}
+              value={inProgressCount}
+              label="Em Progresso"
+            />
+            <View style={styles.statDivider} />
+            <StatItem
+              loading={loadingCompleted || loadingApproved}
+              value={completedCount}
+              label="Concluídas"
+            />
           </View>
         </View>
 
@@ -83,6 +132,27 @@ export default function ProfileScreen() {
         />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function StatItem({
+  loading,
+  value,
+  label,
+}: {
+  loading: boolean;
+  value: number;
+  label: string;
+}) {
+  return (
+    <View style={styles.statItem}>
+      {loading ? (
+        <ActivityIndicator color={Colors.primary} />
+      ) : (
+        <Text style={styles.statValue}>{value}</Text>
+      )}
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -259,6 +329,6 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: Colors.border,
-    marginHorizontal: 16,
+    marginHorizontal: 8,
   },
 });
