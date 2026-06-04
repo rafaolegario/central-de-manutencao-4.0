@@ -104,7 +104,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="tools"
         options={{
-          title: 'Ferramentas',
+          title: 'Empréstimos',
           tabBarIcon: ({ color }) => (
             <MaterialIcons name="build" size={24} color={color} />
           ),
