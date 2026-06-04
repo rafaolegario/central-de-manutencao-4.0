@@ -8,6 +8,7 @@ namespace central_de_manutencao.Communication.Responses.ServiceOrder
         public string NewStatus { get; set; } = string.Empty;
         public string ChangedAt { get; set; } = string.Empty;
         public string ChangedBy { get; set; } = string.Empty;
+        public string? ChangedByName { get; set; }
         public string? Description { get; set; }
     }
 }
