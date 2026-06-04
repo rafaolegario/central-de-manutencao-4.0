@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppButton from '@/components/AppButton';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useOrders } from '@/services/orders/useOrders';
 import { useTool, useWithdrawTool } from '@/services/tools/useTools';
 
@@ -21,6 +21,7 @@ export default function WithdrawToolScreen() {
   const { toolId } = useLocalSearchParams<{ toolId: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { showSuccess, showError } = useToast();
 
   const { data: tool, isLoading: isLoadingTool } = useTool(toolId);
   const { data: ordersData, isLoading: isLoadingOrders } = useOrders({
@@ -74,16 +75,15 @@ export default function WithdrawToolScreen() {
 
   const handleConfirm = async () => {
     if (!effectiveOrderId) {
-      Alert.alert('Selecione uma ordem', 'Escolha uma ordem de serviço em andamento.');
+      showError('Escolha uma ordem de serviço em andamento.');
       return;
     }
     try {
       await doWithdraw({ toolId: tool.id, workOrderId: effectiveOrderId });
-      Alert.alert('Sucesso', 'Ferramenta retirada com sucesso.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showSuccess('Ferramenta retirada com sucesso.');
+      router.back();
     } catch {
-      Alert.alert('Erro', 'Não foi possível retirar a ferramenta.');
+      showError('Não foi possível retirar a ferramenta.');
     }
   };
 
