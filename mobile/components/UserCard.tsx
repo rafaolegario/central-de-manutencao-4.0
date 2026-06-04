@@ -56,7 +56,7 @@ export default function UserCard({ user, onPress, disabled = false }: UserCardPr
           )}
           {!user.active && (
             <View style={styles.inactiveBadge}>
-              <Text style={styles.inactiveBadgeText}>Inativo</Text>
+              <Text style={styles.inactiveBadgeText}>Desativado</Text>
             </View>
           )}
         </View>
