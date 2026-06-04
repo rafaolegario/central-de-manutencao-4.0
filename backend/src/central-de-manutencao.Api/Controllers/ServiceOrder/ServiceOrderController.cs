@@ -85,6 +85,18 @@ public class ServiceOrderController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("{id:guid}/logs")]
+    [ProducesResponseType(typeof(List<ServiceOrderLogResponseJson>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLogs(
+        [FromServices] GetServiceOrderLogsService useCase,
+        [FromRoute] Guid id)
+    {
+        var response = await useCase.Execute(id, User);
+        return Ok(response);
+    }
+
     [HttpPatch("{id:guid}/status")]
     [ProducesResponseType(typeof(ServiceOrderResponseJson), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
