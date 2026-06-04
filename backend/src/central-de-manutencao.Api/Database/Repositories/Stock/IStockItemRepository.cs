@@ -11,4 +11,5 @@ public interface IStockItemRepository
     Task<List<StockItem>> List(bool? lowStock);
     Task ReplenishWithMovement(StockItem item, StockMovement movement);
     Task<(List<StockMovement> Items, int TotalCount)> GetMovements(Guid stockItemId, int page, int pageSize);
+    Task<List<StockMovement>> GetOutMovementsByUser(Guid userId);
 }
