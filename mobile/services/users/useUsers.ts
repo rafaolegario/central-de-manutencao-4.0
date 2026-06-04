@@ -23,8 +23,11 @@ export function useUsers(params?: UserListParams) {
   );
 }
 
-export function useUser(id: string) {
-  return useApiQuery<User>(() => getUser(id), [id]);
+export function useUser(id: string | null | undefined) {
+  return useApiQuery<User>(
+    () => (id ? getUser(id) : Promise.resolve(null as unknown as User)),
+    [id ?? '']
+  );
 }
 
 export function useCreateUser() {
