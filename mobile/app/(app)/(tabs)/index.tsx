@@ -15,9 +15,10 @@ import ServiceOrderCard from '@/components/ServiceOrderCard';
 import StatsCard from '@/components/StatsCard';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useApiQuery } from '@/services/api/useApiQuery';
 import { useOrders } from '@/services/orders/useOrders';
 import { useStockItems } from '@/services/stock/useStock';
-import { useActiveUsages } from '@/services/tools/useTools';
+import { listActiveUsages, listMyUsages } from '@/services/tools/toolService';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -33,7 +34,10 @@ export default function DashboardScreen() {
   const { data: lowStockItems, refetch: refetchStock } = useStockItems(
     isAdmin ? true : undefined
   );
-  const { data: activeUsagesData, refetch: refetchUsages } = useActiveUsages();
+  const { data: activeUsagesData, refetch: refetchUsages } = useApiQuery(
+    () => (isAdmin ? listActiveUsages() : listMyUsages()),
+    [isAdmin]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -62,7 +66,7 @@ export default function DashboardScreen() {
   const toolsInUseCount = activeUsages.length;
   const lowStockCount = (lowStockItems ?? []).length;
   const myToolsInUseCount = user
-    ? activeUsages.filter((u) => u.technicianId === user.id).length
+    ? activeUsages.filter((u) => u.technicianId === user.id && !u.returnedAt).length
     : 0;
 
   const recentOrders = [...orders]
@@ -192,6 +196,7 @@ export default function DashboardScreen() {
             <ServiceOrderCard
               key={order.id}
               order={order}
+              technicianName={order.technicianName ?? 'Não atribuído'}
               onPress={() =>
                 router.push({ pathname: '/(app)/orders/[id]', params: { id: order.id } })
               }
