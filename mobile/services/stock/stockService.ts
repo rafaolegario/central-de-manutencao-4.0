@@ -1,7 +1,9 @@
 import { apiFetch } from '@/services/api/client';
 import type {
+  ConsumeStockRequest,
   CreateStockItemRequest,
   EditStockItemRequest,
+  MyStockMovement,
   PaginatedResponse,
   ReplenishStockRequest,
   StockItem,
@@ -51,6 +53,16 @@ export function replenishStock(
   });
 }
 
+export function consumeStock(
+  id: string,
+  data: ConsumeStockRequest
+): Promise<StockItem> {
+  return apiFetch<StockItem>(`/api/stock/${id}/consume`, {
+    method: 'POST',
+    body: data,
+  });
+}
+
 export function listMovements(
   id: string,
   page?: number,
@@ -60,4 +72,8 @@ export function listMovements(
     `/api/stock/${id}/movements`,
     { params: { page, pageSize } }
   );
+}
+
+export function listMyStockMovements(): Promise<MyStockMovement[]> {
+  return apiFetch<MyStockMovement[]>('/api/stock/movements/mine');
 }
