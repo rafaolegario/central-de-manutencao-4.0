@@ -1,19 +1,23 @@
 import { useApiMutation } from '@/services/api/useApiMutation';
 import { useApiQuery } from '@/services/api/useApiQuery';
 import type {
+  ConsumeStockRequest,
   CreateStockItemRequest,
   EditStockItemRequest,
+  MyStockMovement,
   PaginatedResponse,
   ReplenishStockRequest,
   StockItem,
   StockMovement,
 } from '@/types/api';
 import {
+  consumeStock,
   createStockItem,
   deleteStockItem,
   editStockItem,
   getStockItem,
   listMovements,
+  listMyStockMovements,
   listStockItems,
   replenishStock,
 } from './stockService';
@@ -46,9 +50,19 @@ export function useReplenishStock() {
   );
 }
 
+export function useConsumeStock() {
+  return useApiMutation<{ id: string; data: ConsumeStockRequest }, StockItem>(
+    ({ id, data }) => consumeStock(id, data)
+  );
+}
+
 export function useStockMovements(id: string, page?: number, pageSize?: number) {
   return useApiQuery<PaginatedResponse<StockMovement>>(
     () => listMovements(id, page, pageSize),
     [id, page, pageSize]
   );
+}
+
+export function useMyStockMovements() {
+  return useApiQuery<MyStockMovement[]>(listMyStockMovements);
 }
