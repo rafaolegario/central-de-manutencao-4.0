@@ -71,6 +71,14 @@ public class ToolRepository : IToolRepository
             .ToListAsync();
     }
 
+    public async Task<List<ToolUsage>> GetUsagesByTechnicianId(Guid technicianId)
+    {
+        return await _context.ToolUsages
+            .Where(u => u.TechnicianId == technicianId)
+            .OrderByDescending(u => u.WithdrawnAt)
+            .ToListAsync();
+    }
+
     public async Task WithdrawTool(Tool tool, ToolUsage usage)
     {
         _context.Tools.Update(tool);
