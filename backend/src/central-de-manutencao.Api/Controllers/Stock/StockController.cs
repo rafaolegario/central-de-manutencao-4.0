@@ -9,10 +9,11 @@ namespace central_de_manutencao.Api.Controllers.Stock;
 
 [Route("api/stock")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class StockController : ControllerBase
 {
     [HttpGet]
+    [Authorize(Roles = "Admin,Technician")]
     [ProducesResponseType(typeof(List<StockItemResponseJson>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(
         [FromServices] ListStockItemsService useCase,
@@ -23,6 +24,7 @@ public class StockController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(StockItemResponseJson), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -34,6 +36,7 @@ public class StockController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin,Technician")]
     [ProducesResponseType(typeof(StockItemResponseJson), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(
@@ -45,6 +48,7 @@ public class StockController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(StockItemResponseJson), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
@@ -58,6 +62,7 @@ public class StockController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
@@ -70,6 +75,7 @@ public class StockController : ControllerBase
     }
 
     [HttpPost("{id:guid}/replenish")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(StockItemResponseJson), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
@@ -82,7 +88,33 @@ public class StockController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("{id:guid}/consume")]
+    [Authorize(Roles = "Admin,Technician")]
+    [ProducesResponseType(typeof(StockItemResponseJson), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Consume(
+        [FromServices] ConsumeStockService useCase,
+        [FromRoute] Guid id,
+        [FromBody] ConsumeStockRequestJson request)
+    {
+        var response = await useCase.Execute(id, request, User);
+        return Ok(response);
+    }
+
+    [HttpGet("movements/mine")]
+    [Authorize(Roles = "Admin,Technician")]
+    [ProducesResponseType(typeof(List<MyStockMovementResponseJson>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListMyMovements(
+        [FromServices] ListMyStockMovementsService useCase)
+    {
+        var response = await useCase.Execute(User);
+        return Ok(response);
+    }
+
     [HttpGet("{id:guid}/movements")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(StockMovementListResponseJson), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseErrorJson), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListMovements(
