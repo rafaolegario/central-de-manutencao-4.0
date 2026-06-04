@@ -48,6 +48,10 @@ export default function AppLayout() {
         options={{ headerShown: true, title: 'Retirar Ferramenta' }}
       />
       <Stack.Screen
+        name="tools/my-borrows"
+        options={{ headerShown: true, title: 'Minhas Retiradas' }}
+      />
+      <Stack.Screen
         name="stock/[id]"
         options={{ headerShown: true, title: 'Item de Estoque' }}
       />
@@ -60,8 +64,28 @@ export default function AppLayout() {
         options={{ headerShown: true, title: 'Reabastecer' }}
       />
       <Stack.Screen
+        name="stock/consume"
+        options={{ headerShown: true, title: 'Retirar do Estoque' }}
+      />
+      <Stack.Screen
         name="stock/movements"
         options={{ headerShown: true, title: 'Movimentações' }}
+      />
+      <Stack.Screen
+        name="tools/edit/[id]"
+        options={{ headerShown: true, title: 'Editar Ferramenta' }}
+      />
+      <Stack.Screen
+        name="users/edit/[id]"
+        options={{ headerShown: true, title: 'Editar Usuário' }}
+      />
+      <Stack.Screen
+        name="orders/edit/[id]"
+        options={{ headerShown: true, title: 'Editar Ordem' }}
+      />
+      <Stack.Screen
+        name="stock/edit/[id]"
+        options={{ headerShown: true, title: 'Editar Item' }}
       />
       <Stack.Screen
         name="onboarding/admin/add-tool"
