@@ -51,6 +51,7 @@ namespace central_de_manutencao.Api
             services.AddScoped<EditServiceOrderService>();
             services.AddScoped<DeleteServiceOrderService>();
             services.AddScoped<GetServiceOrderService>();
+            services.AddScoped<GetServiceOrderLogsService>();
             services.AddScoped<ListServiceOrdersService>();
             services.AddScoped<UpdateServiceOrderStatusService>();
 
@@ -61,7 +62,9 @@ namespace central_de_manutencao.Api
             services.AddScoped<GetStockItemService>();
             services.AddScoped<ListStockItemsService>();
             services.AddScoped<ReplenishStockService>();
+            services.AddScoped<ConsumeStockService>();
             services.AddScoped<ListStockMovementsService>();
+            services.AddScoped<ListMyStockMovementsService>();
 
             services.AddScoped<IToolRepository, ToolRepository>();
             services.AddScoped<CreateToolService>();
@@ -72,6 +75,7 @@ namespace central_de_manutencao.Api
             services.AddScoped<WithdrawToolService>();
             services.AddScoped<ReturnToolService>();
             services.AddScoped<ListActiveToolUsagesService>();
+            services.AddScoped<ListTechnicianToolUsagesService>();
 
             services.AddScoped<GetOnboardingStatusService>();
 
