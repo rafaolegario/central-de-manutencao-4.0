@@ -18,19 +18,8 @@ import { formatDate, formatDateTime } from '@/utils/format';
 import { useAuth } from '@/context/AuthContext';
 import { useConfirm } from '@/context/ConfirmDialogContext';
 import { useToast } from '@/context/ToastContext';
-import { useDeleteOrder, useOrder } from '@/services/orders/useOrders';
-import { useUsers } from '@/services/users/useUsers';
-import type { ServiceOrderStatus } from '@/types/api';
-
-interface StatusLogEntry {
-  id: string;
-  serviceOrderId: string;
-  oldStatus: ServiceOrderStatus;
-  newStatus: ServiceOrderStatus;
-  changedAt: string;
-  changedBy: string;
-  description: string | null;
-}
+import { useDeleteOrder, useOrder, useOrderLogs, useUpdateOrderStatus } from '@/services/orders/useOrders';
+import type { ServiceOrderLog, ServiceOrderStatus } from '@/types/api';
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,17 +29,15 @@ export default function OrderDetailScreen() {
   const { showSuccess, showError } = useToast();
 
   const { data: order, isLoading, error, refetch } = useOrder(id);
-  const { data: usersData } = useUsers();
+  const { data: logsData, refetch: refetchLogs } = useOrderLogs(id);
   const { mutate: deleteOrder, isLoading: isDeleting } = useDeleteOrder();
+  const { mutate: updateStatus, isLoading: isUpdatingStatus } = useUpdateOrderStatus();
 
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch]),
-  );
-
-  const userMap: Record<string, string> = Object.fromEntries(
-    (usersData ?? []).map((u) => [u.id, u.name])
+      refetchLogs();
+    }, [refetch, refetchLogs]),
   );
 
   if (isLoading) {
@@ -75,7 +62,7 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const logs: StatusLogEntry[] = [];
+  const logs: ServiceOrderLog[] = logsData ?? [];
 
   const canDelete =
     user?.role === 'Admin' &&
@@ -88,6 +75,20 @@ export default function OrderDetailScreen() {
     order.status !== 'Approved' &&
     order.status !== 'Rejected' &&
     order.status !== 'Canceled';
+
+  const isMyOrder =
+    user?.role === 'Technician' && order.technicianId === user?.id;
+
+  const handleStatusChange = async (newStatus: ServiceOrderStatus) => {
+    try {
+      await updateStatus({ id: order.id, data: { status: newStatus } });
+      showSuccess('Status atualizado.');
+      refetch();
+      refetchLogs();
+    } catch {
+      showError('Não foi possível atualizar o status.');
+    }
+  };
 
   const handleEdit = () => {
     router.push({ pathname: '/(app)/orders/edit/[id]', params: { id: order.id } });
@@ -147,19 +148,19 @@ export default function OrderDetailScreen() {
           <View style={styles.cardDivider} />
           <MetaRow
             label="Técnico"
-            value={order.technicianId ? (userMap[order.technicianId] ?? '—') : 'Não atribuído'}
+            value={order.technicianId ? (order.technicianName ?? '—') : 'Não atribuído'}
           />
           <View style={styles.cardDivider} />
           <MetaRow
             label="Criado por"
-            value={userMap[order.createdBy] ?? '—'}
+            value={order.createdByName ?? '—'}
           />
           {order.assignedBy && (
             <>
               <View style={styles.cardDivider} />
               <MetaRow
                 label="Atribuído por"
-                value={userMap[order.assignedBy] ?? '—'}
+                value={order.assignedByName ?? '—'}
               />
             </>
           )}
@@ -189,7 +190,7 @@ export default function OrderDetailScreen() {
               <LogEntry
                 key={log.id}
                 log={log}
-                changedByName={userMap[log.changedBy] ?? '—'}
+                changedByName={log.changedByName ?? '—'}
                 isLast={index === logs.length - 1}
               />
             ))}
@@ -220,6 +221,52 @@ export default function OrderDetailScreen() {
             )}
           </View>
         )}
+
+        {/* Technician status actions */}
+        {isMyOrder && (
+          <View style={styles.actions}>
+            {order.status === 'Assigned' && (
+              <AppButton
+                label="Iniciar"
+                icon="play-arrow"
+                variant="primary"
+                onPress={() => handleStatusChange('InProgress')}
+                loading={isUpdatingStatus}
+                fullWidth
+              />
+            )}
+            {order.status === 'InProgress' && (
+              <>
+                <AppButton
+                  label="Pausar"
+                  icon="pause"
+                  variant="secondary"
+                  onPress={() => handleStatusChange('Paused')}
+                  loading={isUpdatingStatus}
+                  fullWidth
+                />
+                <AppButton
+                  label="Concluir"
+                  icon="check-circle-outline"
+                  variant="primary"
+                  onPress={() => handleStatusChange('Completed')}
+                  loading={isUpdatingStatus}
+                  fullWidth
+                />
+              </>
+            )}
+            {order.status === 'Paused' && (
+              <AppButton
+                label="Retomar"
+                icon="play-arrow"
+                variant="primary"
+                onPress={() => handleStatusChange('InProgress')}
+                loading={isUpdatingStatus}
+                fullWidth
+              />
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -230,7 +277,7 @@ function LogEntry({
   changedByName,
   isLast,
 }: {
-  log: StatusLogEntry;
+  log: ServiceOrderLog;
   changedByName: string;
   isLast: boolean;
 }) {
